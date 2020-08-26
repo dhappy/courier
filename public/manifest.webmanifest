@@ -1,0 +1,22 @@
+{
+  "short_name": "Courier",
+  "name": "Ad Hoc Courier Application",
+  "description": "Allows dynamic package delivery",
+  "icons": [
+    {
+      "src": "envelope.svg",
+      "sizes": "512x512 192x192 64x64 32x32 24x24 16x16",
+      "type": "image/xml+svg"
+    }
+  ],
+  "intent_filters": {
+    "scope_url_scheme": "https",
+    "scope_url_host": "pkg.dhappy.org",
+    "scope_url_path": "/"
+  },
+  "scope_url": "/",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#cf720e",
+  "background_color": "#fff5eb"
+}
