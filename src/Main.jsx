@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { MetaMaskButton, Button, Card, Box, Flex } from "rimble-ui"
-import Web3 from 'web3'
+//import Web3 from 'web3'
 import { Link } from 'react-router-dom'
 import './App.css'
 
 export default () => {
   const [addr, setAddr] = useState()
-  const web3 = new Web3(Web3.givenProvider);
+  //const web3 = new Web3(Web3.givenProvider);
 
+  const mobile = (
+    /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i
+    .test(navigator.userAgent)
+  )
   const connect = async () => {
     if(window.ethereum) {
       const addrs = (
@@ -41,12 +45,24 @@ export default () => {
                 </MetaMaskButton>
               )
               : (
-                <MetaMaskButton
-                  as='a' href='//metamask.io/download.html' target='_blank'
-                  title='Download MetaMask' mx='auto'
-                >
-                  Install MetaMask
-                </MetaMaskButton>
+                (mobile
+                  ? (
+                    <MetaMaskButton
+                    as='a' href='//metamask.app.link/dapp/pkg.dhappy.org' target='_blank'
+                    title='Download MetaMask' mx='auto'
+                    >
+                      Launch in MetaMask
+                    </MetaMaskButton>
+                  )
+                  : (
+                    <MetaMaskButton
+                      as='a' href='//metamask.io/download.html' target='_blank'
+                      title='Download MetaMask' mx='auto'
+                    >
+                      Install MetaMask
+                    </MetaMaskButton>
+                  )
+                )
               )
             )
           )
