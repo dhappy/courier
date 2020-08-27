@@ -26,6 +26,7 @@ export default () => {
   return (
     <Card width='auto' maxWidth='25em' mx='auto' px={[3, 3, 4]}>
       <Flex alignItems={"center"}>
+        <h1>{mobile ? 'true' : 'false'}</h1>
         {addr
           ? <Box textAlign='center' width='100%'>
               <Flex justifyContent="space-between" alignItems="center" flexDirection="column">
@@ -48,8 +49,8 @@ export default () => {
                 (mobile
                   ? (
                     <MetaMaskButton
-                    as='a' href='//metamask.app.link/dapp/pkg.dhappy.org' target='_blank'
-                    title='Download MetaMask' mx='auto'
+                    as='a' href='//metamask.app.link/dapp/pkg.dhappy.org'
+                    mx='auto'
                     >
                       Launch in MetaMask
                     </MetaMaskButton>
