@@ -1,68 +1,46 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Courier
 
-## Available Scripts
+**Courier** is an interface to facilitate ad hoc parcel delivery.
 
-In the project directory, you can run:
+## Workflow
 
-### `yarn start`
+The Couriers do not know what they are transporting. The Dealer and Customer communicate with each other the specifics of the exchange. The Dealer seals the items to be sent with tamper evident seals and marks it with a QR code.
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+The Dealer and the Customer both specify their distance in time from waypoints. Couriers bid on the expected travel time between the waypoints and the additional time to the client.
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+If a Dealer or Customer is uncomfortable with the Courier's discretion, they can enlist a more trusted Courier to route between themselves and the meeting with the Courier.
 
-### `yarn test`
+The workflow relies heavily on 3Box's confidental stores which allow restricting read and write access to a limited set of Ethereum identifiers.
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+The Dealer and the Customer are the sole users of a Deals/Seeking database which records Offers the Dealer makes and requests the Customer has.
 
-### `yarn build`
+When the Dealer makes an offer, the Customer may counter with a variation in quantity, price, or both.
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+When agreement is reached, the Customer puts the deal amount in escrow. The Dealer and Customer both enter waypoints and the estimated time it will take to get from that point to themselves.
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+There are a set of databases corresponding to different positions in a [tesselation of the globe](https://github.com/mocnik-science/geogrid). Couriers subscribe to those data sources near themselves and listen for potential jobs.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+A Contract is floated describing the movement and sent to the tesselation for the pickup. Couriers bid on jobs until one is accepted by the Dealer and Customer both.
 
-### `yarn eject`
+The Customer then puts in escrow the amount for delivery.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+The Courier then gets a chat session with the Dealer. They coordinate on where the parcel is to be picked up.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+When the parcel is picked up, it is marked with a GUID in the form of a QR code.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+That GUID is used to find the address of the chat room with the recipient. The Courier then finds the Customer and delivers the parcel.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+The inventory of the parcel as well as information to open it such as combinations for locks is communicated via the Deals/Seeking database.
 
-## Learn More
+The Customer inventories the parcel and reviews the Courier, the parcel contents, and the Dealer.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Faults
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+* The Dealer might not respond to requests for a location. The Courier in this case goes to the waypoint and registers a Wait of, say, five minutes. If the Dealer doesn't communicate in that time period, the Customers escrow is returned minus a Wait fee.
+* The Customer doesn't respond to requests for a location. The same as with the Dealer, in registering a Wait, but the Courier now has a parcel to deal with. It would have to go back to the Dealer eventually. Ideally the Courier would hold it for a while and whenever the Customer comes back online they organize reciept potentially with an additional contract for the Courier to make it back to the waypoint.
+* The Customer doesn't get what was agreed upon. The deal that generated the parcel provides specifics on what it should contain. The Customer is able to review each item and explain how it differed from what was advertized.
+* The Courier opens the parcel. The parcels are meant to be tamper evident at the least. Pictures are taken by the dealer of how the external package should look and sent to the Customer. If the Courier manages to circumvert the tamper hampering, there is little that can be done other than when the Customer receives the parcel they record their belief it was adulterated.
 
-### Code Splitting
+## Currency
 
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `yarn build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+For all transactions I want to use the DAI stablecoin so prices are in, essentially, dollars rather than the wildly variable ETH.
