@@ -1,32 +1,42 @@
 import React, { useState } from 'react'
-import { Button, Card, Icon, Flex, Heading, Field, Input } from "rimble-ui"
+import {
+  Tooltip, Button, Card, Icon,
+  Flex, Heading, Field, Input
+} from "rimble-ui"
 import QRReader from './QRReader'
 
 export default () => {
-  const [scanning, setScanning] = useState(true)
+  const [scanning, setScanning] = useState(false)
   const [data, setData] = useState()
 
   const onScan = (data) => {
-    setScanning(false)
-    setData(data)
+    if(data) {
+      setScanning(false)
+      setData(data)
+    }
   }
 
   return (
     <Flex alignItems='center' flexDirection='column'>
-      {data && <Card><Heading>{data}</Heading></Card>}
       {scanning
         ? (
           <QRReader onScan={onScan}/>
         )
         : (
-          <Flex alignItems='center' flexDirection='row'>
-            <Field label="Package ID">
-              <Input type='search' required={true} placeholder='4oZGBxUc8bWxpmjurJucKr' />
-            </Field>
-            <Button onClick={() => setScanning(true)}>
-              <Icon color="tomato" name="Pages" size="80"/>
-            </Button>
-          </Flex>
+          <Field label="Package ID">
+            <Flex alignItems='center' flexDirection='row'>
+              <Input type='text' required={true}
+                width='25em'
+                placeholder='128 bits base58 encoded'
+                value={data} onChange={evt => setData(evt.target.value)}
+              />
+              <Tooltip message='Read QR Code'>
+                <Button onClick={() => setScanning(true)}>
+                  <Icon color="tomato" name="Pages" size="80"/>
+                </Button>
+              </Tooltip>
+            </Flex>
+          </Field>
         )
       }
     </Flex>
