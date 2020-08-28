@@ -26,11 +26,13 @@ The Customer then puts in escrow the amount for delivery.
 
 The Courier then gets a chat session with the Dealer. They coordinate on where the parcel is to be picked up.
 
+As the Courier is driving their phone is working as a livestreaming dash cam. If they are stopped for any reason they can escalate their situation to get realtime legal advice as they encounter the police. 
+
 When the parcel is picked up, it is marked with a GUID in the form of a QR code.
 
-That GUID is used to find the address of the chat room with the recipient. The Courier then finds the Customer and delivers the parcel.
+The Courier then finds the Customer and delivers the parcel.
 
-The inventory of the parcel as well as information to open it such as combinations for locks is communicated via the Deals/Seeking database.
+The inventory of the parcel associated with the GUID as well as information to open it such as combinations for locks is communicated via the Deals/Seeking database.
 
 The Customer inventories the parcel and reviews the Courier, the parcel contents, and the Dealer.
 

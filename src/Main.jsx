@@ -35,6 +35,9 @@ export default () => {
                 <Link to='/pkg'>
                   <Button mx='auto' my='0.5em'>Investigate Packages</Button>
                 </Link>
+                <Link to='/drive'>
+                  <Button mx='auto' my='0.5em'>Drive</Button>
+                </Link>
               </Flex>
             </Box>
           : (
