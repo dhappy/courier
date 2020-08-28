@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Map as LeafletMap, Marker, Popup, TileLayer, Polygon, FeatureGroup } from 'react-leaflet'
 import { EditControl } from 'react-leaflet-draw'
-import { Card, Flex, Heading, Table, Form, Input, Button, Loader } from 'rimble-ui'
+import { Card, Flex, Heading, Table, Form, Input, Button, Loader, Icon } from 'rimble-ui'
 import Box from '3box'
 //import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
@@ -32,6 +32,8 @@ export default () => {
     const name = await box.public.get('name')
     console.info('PFL', name)
     setName(name)
+
+
   }, [])
 
   useEffect(() => { getProfile() }, [getProfile])
@@ -156,6 +158,7 @@ export default () => {
           />
         ))}
       </LeafletMap>
+      <Button><Icon name='UnfoldLess'/></Button>
       <Table>
         <thead><tr>
           <th>Zone ID</th>
