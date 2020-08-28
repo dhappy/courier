@@ -29,7 +29,7 @@ export default () => {
 
   return (
     <Router>
-      <ConnectionBanner currentNetwork={currentNet} requiredNetwork={4} onWeb3Fallback={true}>
+      <ConnectionBanner currentNetwork={currentNet} requiredNetwork={4}>
         {{
           notWeb3CapableBrowserMessage: (
             <Card maxWidth='25em' mx='auto' marginTop='1.5em'>
@@ -43,16 +43,28 @@ export default () => {
               </Flex>
             </Card>
           ),
+          noNetworkAvailableMessage: (
+            <Card maxWidth='25em' mx='auto' marginTop='1.5em'>
+              <Flex alignItems='center' flexDirection='column'>
+                <MetaMaskButton
+                  as='a' href='//metamask.io/download.html'
+                  mx='auto'
+                >
+                  {mobile ? 'Launch in MetaMask' : 'Get Metamask'}
+                </MetaMaskButton>
+              </Flex>
+            </Card>
+          ),
         }}
       </ConnectionBanner>
       <Switch>
         <Route path='/' exact>
           <Main />
         </Route>
-        <Route path="/jobs">
+        <Route path='/jobs'>
           <Jobs />
         </Route>
-        <Route path="/pkg">
+        <Route path='/parcels'>
           <Parcels />
         </Route>
       </Switch>

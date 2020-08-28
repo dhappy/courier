@@ -1,11 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Map as LeafletMap, Marker, Popup, TileLayer, Polygon, FeatureGroup } from 'react-leaflet'
 import { EditControl } from 'react-leaflet-draw'
-import { Card, Flex, Heading, Table, Form, Input, Button, Loader, Icon } from 'rimble-ui'
+import {
+  Text, Blockie, Card, Flex, Heading,
+  Table, Form, Input, Button, Loader,
+  Icon, Tooltip
+} from 'rimble-ui'
 import Box from '3box'
 //import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import Web3 from 'web3'
+
+const creator = '0xC33290860C1DA6a84195C5cf1575860d3A3ED73d' // to look up zones space
+const zonesSpace = 'courier-zones'
 
 export default () => {
   const [pos, setPos] = useState({ y: 51.505, x: -0.09 })
@@ -13,6 +20,7 @@ export default () => {
   const [zones, setZones] = useState([])
   const [contracts, setContracts] = useState([])
   const [name, setName] = useState()
+  const [threadMgr, setThreadMgr] = useState()
   const web3 = new Web3(Web3.givenProvider)
 
   useEffect(() => {
@@ -22,25 +30,66 @@ export default () => {
   }, [])
 
   const getProfile = useCallback(async () => {
-    setName(<Loader size='80px'/>)
-    const user = (await web3.eth.getAccounts())[0]
-    console.info('CB', user)
-    const box = await Box.openBox(user, Web3.givenProvider)
-    console.info('BX', box)
-    await box.syncDone
-    console.info('SD', box)
-    const name = await box.public.get('name')
-    console.info('PFL', name)
-    setName(name)
+    const displayName = (text, loading = false) => (
+      <Flex alignItems='center' flexDirection='column'>
+        <Heading>{text}</Heading>
+        {loading && <Loader size='80px'/>}
+      </Flex>
+    )
 
-
-  }, [])
+    try {
+      setName(displayName('Loading Profile…', true))
+      const user = (
+        await window.ethereum.request({ method: 'eth_requestAccounts' })
+      )[0]
+      setName(displayName(
+        <Tooltip message={user} placement='bottom'>
+          <Flex alignItems='center' flexDirection='column'>
+            <Heading>Researching</Heading>
+            <Blockie opts={{ seed: user, size: 50 }}/>
+          </Flex>
+        </Tooltip>,
+        true
+      ))
+      const box = await Box.openBox(user, Web3.givenProvider)
+      setName(displayName('Opened Box…', true))
+      await box.syncDone
+      Promise.all([
+        (async () => setName(displayName(
+          await box.public.get('name')
+        ))),
+        (async () => {
+          let threadMgr = await Box.getSpace(creator, zonesSpace)
+          if(!threadMgr) {
+            if(user === creator) {
+              threadMgr = await box.openSpace(zonesSpace)
+            } else {
+              alert("Couldn't find the thread manager.")
+            }
+          }
+          setThreadMgr(threadMgr)
+        }),
+      ])
+    } catch(err) {
+      alert(`Error Connecting to 3Box: '${err.message}'`)
+      setName(displayName('Loading Failed'))
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { getProfile() }, [getProfile])
 
   const extractContracts = useCallback(async (zones) => {
-    //for(let zone of zones) {}
-  }, [web3.eth])
+    if(threadMgr) {
+      for(let zone of zones) {
+        const addr = threadMgr.public.get(`zone-db-${zone.id}`)
+        if(addr) {
+          const thread = await threadMgr.joinThreadByAddress(addr)
+          const posts = await thread.getPosts()
+          console.log(zone, posts)
+        }
+      }
+    }
+  }, [threadMgr])
 
   useEffect(() => { extractContracts(zones) }, [extractContracts, zones])
 
@@ -85,6 +134,7 @@ export default () => {
         ]
         poly.center = p
         poly.index = { row: start.row + row, col: start.col + i % cols }
+        poly.id = `(${poly.index.row}, ${poly.index.col})`
         poly.contracts = []
         return poly
       })
@@ -167,8 +217,8 @@ export default () => {
         </tr></thead>
         <tbody>
           {zones.map((zone) => (
-            <tr key={`(${zone.index.row}, ${zone.index.col})`}>
-              <td>{`(${zone.index.row}, ${zone.index.col})`}</td>
+            <tr key={zone.id}>
+              <td>{zone.id}</td>
               <td>{zone.contracts.length}</td>
               <td>{(() => {
                 // https://www.geeksforgeeks.org/program-distance-two-points-earth/
