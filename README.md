@@ -41,7 +41,14 @@ The Customer inventories the parcel and reviews the Courier, the parcel contents
 * The Dealer might not respond to requests for a location. The Courier in this case goes to the waypoint and registers a Wait of, say, five minutes. If the Dealer doesn't communicate in that time period, the Customers escrow is returned minus a Wait fee.
 * The Customer doesn't respond to requests for a location. The same as with the Dealer, in registering a Wait, but the Courier now has a parcel to deal with. It would have to go back to the Dealer eventually. Ideally the Courier would hold it for a while and whenever the Customer comes back online they organize reciept potentially with an additional contract for the Courier to make it back to the waypoint.
 * The Customer doesn't get what was agreed upon. The deal that generated the parcel provides specifics on what it should contain. The Customer is able to review each item and explain how it differed from what was advertized.
+* The Courier keeps a parcel. Couriers carry a bond and the amount to be staked is specified in the contract. If they accept the parcel, at a minimum they must check in at the receiver's waypoint or their stake is forfeit.
 * The Courier opens the parcel. The parcels are meant to be tamper evident at the least. Pictures are taken by the dealer of how the external package should look and sent to the Customer. If the Courier manages to circumvert the tamper hampering, there is little that can be done other than when the Customer receives the parcel they record their belief it was adulterated.
+
+## Testing
+
+Initially I would like to move small trivial items like candy or coins.
+
+I like the idea of parcels being combined into bundles and move as a group. I also like the idea of parcels starting to move before they are sold. They are purchased from the current holder who, like the Couriers, doesn't know what is inside.
 
 ## Currency
 
