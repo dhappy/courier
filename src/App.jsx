@@ -1,22 +1,61 @@
-import React from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { HashRouter as Router, Switch, Route } from 'react-router-dom'
+import ConnectionBanner from '@rimble/connection-banner'
+import { MetaMaskButton, Card, Flex } from "rimble-ui"
+import Web3 from 'web3'
 import './App.css'
 import Main from './Main'
 import Jobs from './Jobs'
-import QRReader from './QRReader'
+import Parcels from './Parcels'
 
-export default () => (
-  <Router>
-    <Switch>
-      <Route path='/' exact>
-        <Main />
-      </Route>
-      <Route path="/jobs">
-        <Jobs />
-      </Route>
-      <Route path="/pkg">
-        <QRReader />
-      </Route>
-    </Switch>
-  </Router>
-)
+export default () => {
+  const [currentNet, setCurrentNet] = useState()
+  const web3 = new Web3(Web3.givenProvider)
+
+  const setNet = useCallback(async () => {
+    try {
+     setCurrentNet(await web3.eth.net.getId())
+    } catch(err) {
+      console.error('App#setNet', err)
+    }
+  }, [web3.eth.net])
+
+  useEffect(() => { setNet() }, [setNet])
+
+  const mobile = (
+    /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i
+    .test(navigator.userAgent)
+  )
+
+  return (
+    <Router>
+      <ConnectionBanner currentNetwork={currentNet} requiredNetwork={4} onWeb3Fallback={true}>
+        {{
+          notWeb3CapableBrowserMessage: (
+            <Card maxWidth='25em' mx='auto' marginTop='1.5em'>
+              <Flex alignItems='center' flexDirection='column'>
+                <MetaMaskButton
+                  as='a' href='//metamask.app.link/dapp/pkg.dhappy.org'
+                  mx='auto'
+                >
+                  {mobile ? 'Launch in MetaMask' : 'Get Metamask'}
+                </MetaMaskButton>
+              </Flex>
+            </Card>
+          ),
+        }}
+      </ConnectionBanner>
+      <Switch>
+        <Route path='/' exact>
+          <Main />
+        </Route>
+        <Route path="/jobs">
+          <Jobs />
+        </Route>
+        <Route path="/pkg">
+          <Parcels />
+        </Route>
+      </Switch>
+    </Router>
+  )
+}

@@ -1,29 +1,18 @@
-import React, { useState } from 'react'
+import React from 'react'
 import QrReader from 'react-qr-reader'
 import './App.css';
 
-export default () => {
-  const [result, setResult] = useState('No Result')
-   
-  const handleScan = (data) => {
-    if(data) {
-      setResult(data)
-    }
-  }
-
+export default (props) => {
   const handleError = (err) => {
-    console.error(err)
+    alert(err.message)
   }
 
   return (
-    <div>
-      <h1>{result}</h1>
-      <QrReader
-        delay={200}
-        onError={handleError}
-        onScan={handleScan}
-        style={{ width: '50vw', maxHeight: '50vh' }}
-      />
-    </div>
+    <QrReader
+      delay={200}
+      onError={handleError}
+      onScan={props.onScan}
+      style={{ width: '50vw', maxHeight: '50vh' }}
+    />
   )
 }

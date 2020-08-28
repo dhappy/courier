@@ -1,76 +1,33 @@
-import React, { useState } from 'react'
-import { MetaMaskButton, Button, Card, Box, Flex } from "rimble-ui"
-//import Web3 from 'web3'
+import React from 'react'
+import { Button, Card, Box, Flex, Heading } from 'rimble-ui'
 import { Link } from 'react-router-dom'
 import './App.css'
 
 export default () => {
-  const [addr, setAddr] = useState()
-  //const web3 = new Web3(Web3.givenProvider);
-
-  const mobile = (
-    /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i
-    .test(navigator.userAgent)
-  )
-  const connect = async () => {
-    if(window.ethereum) {
-      const addrs = (
-        await window.ethereum.request({ method: 'eth_requestAccounts' })
-      )
-      if(addrs.length >= 1) {
-        setAddr(addrs[0])
-      }
-    }
-  }
-
   return (
-    <Card width='auto' maxWidth='25em' mx='auto' px={[3, 3, 4]}>
-      <Flex alignItems={"center"}>
-        {addr
-          ? <Box textAlign='center' width='100%'>
-              <Flex justifyContent="space-between" alignItems="center" flexDirection="column">
-                <Link to='/jobs'>
-                  <Button mx='auto' my='0.5em'>Bid On Jobs</Button>
-                </Link>
-                <Link to='/pkg'>
-                  <Button mx='auto' my='0.5em'>Investigate Packages</Button>
-                </Link>
-                <Link to='/drive'>
-                  <Button mx='auto' my='0.5em'>Drive</Button>
-                </Link>
-              </Flex>
-            </Box>
-          : (
-            (window.ethereum
-              ? (
-                <MetaMaskButton onClick={connect} mx='auto' textAlign='center'>
-                  Connect with MetaMask
-                </MetaMaskButton>
-              )
-              : (
-                (mobile
-                  ? (
-                    <MetaMaskButton
-                    as='a' href='//metamask.app.link/dapp/pkg.dhappy.org'
-                    mx='auto'
-                    >
-                      Launch in MetaMask
-                    </MetaMaskButton>
-                  )
-                  : (
-                    <MetaMaskButton
-                      as='a' href='//metamask.io/download.html' target='_blank'
-                      title='Download MetaMask' mx='auto'
-                    >
-                      Install MetaMask
-                    </MetaMaskButton>
-                  )
-                )
-              )
-            )
-          )
-        }
-      </Flex>
-    </Card>
+    <Box>
+      <Card maxWidth='25em' mx='auto' marginTop='1.5em'>
+        <Flex alignItems='center' flexDirection='column'>
+          <Heading>Couriers</Heading>
+          <Link to='/jobs'>
+            <Button mx='auto' my='0.5em'>Bid On Jobs</Button>
+          </Link>
+          <Link to='/parcels'>
+            <Button mx='auto' my='0.5em'>Investigate Parcels</Button>
+          </Link>
+          <Link to='/drive'>
+            <Button mx='auto' my='0.5em'>Drive</Button>
+          </Link>
+        </Flex>
+      </Card>
+      <Card maxWidth='25em' mx='auto' marginTop='1.5em' px={[3, 3, 4]}>
+        <Flex alignItems='center'  flexDirection='column'>
+          <Heading>Shippers</Heading>
+          <Link to='/ship'>
+            <Button mx='auto' my='0.5em'>Ship a Parcel</Button>
+          </Link>
+        </Flex>
+      </Card>
+    </Box>
   )
 }
