@@ -18,8 +18,8 @@ export default () => {
   const [pos, setPos] = useState({ y: 51.505, x: -0.09 })
   const [hexs, setHexs] = useState([])
   const [zones, setZones] = useState([])
-  const [contracts, setContracts] = useState([])
   const [name, setName] = useState()
+  const [contracts, setContracts] = useState({})
   const [threadMgr, setThreadMgr] = useState()
   const web3 = new Web3(Web3.givenProvider)
 
@@ -54,21 +54,22 @@ export default () => {
       const box = await Box.openBox(user, Web3.givenProvider)
       setName(displayName('Opened Box…', true))
       await box.syncDone
-      Promise.all([
+      setName(displayName('Getting Name…', true))
+      await Promise.all([
         (async () => setName(displayName(
-          await box.public.get('name')
-        ))),
+          `Welcome ${await box.public.get('name')}`
+        )))(),
         (async () => {
           let threadMgr = await Box.getSpace(creator, zonesSpace)
-          if(!threadMgr) {
-            if(user === creator) {
+          if(Object.keys(threadMgr).length === 0) {
+            if(user.toLowerCase() === creator.toLowerCase()) {
               threadMgr = await box.openSpace(zonesSpace)
             } else {
               alert("Couldn't find the thread manager.")
             }
           }
           setThreadMgr(threadMgr)
-        }),
+        })(),
       ])
     } catch(err) {
       alert(`Error Connecting to 3Box: '${err.message}'`)
@@ -78,20 +79,29 @@ export default () => {
 
   useEffect(() => { getProfile() }, [getProfile])
 
-  const extractContracts = useCallback(async (zones) => {
+  const refreshContracts = useCallback(async (zones) => {
     if(threadMgr) {
+      const validContract = async (post) => (
+        post.type === 'contract'
+        && (await web3.eth.getBlockNumber()) <= post.expires
+      )
+      const contracts = {}
       for(let zone of zones) {
-        const addr = threadMgr.public.get(`zone-db-${zone.id}`)
-        if(addr) {
-          const thread = await threadMgr.joinThreadByAddress(addr)
+        if(!zone.addr) {
+          zone.addr = await threadMgr.public.get(`zone-db-${zone.id}`)
+        }
+        if(zone.addr) {
+          const thread = await threadMgr.joinThreadByAddress(zone.addr)
           const posts = await thread.getPosts()
-          console.log(zone, posts)
+          const isContract = await Promise.all(posts.map(validContract))
+          contracts[zone.id] = posts.filter((_, i) => isContract[i])
         }
       }
+      setContracts(contracts)
     }
   }, [threadMgr])
 
-  useEffect(() => { extractContracts(zones) }, [extractContracts, zones])
+  useEffect(() => { refreshContracts(zones) }, [refreshContracts, zones])
 
   useEffect(() => {
     const w = 0.015
@@ -134,7 +144,7 @@ export default () => {
         ]
         poly.center = p
         poly.index = { row: start.row + row, col: start.col + i % cols }
-        poly.id = `(${poly.index.row}, ${poly.index.col})`
+        poly.id = `(${poly.index.row},${poly.index.col})`
         poly.contracts = []
         return poly
       })
@@ -164,7 +174,7 @@ export default () => {
       {name &&
         <Card><Heading>{name}</Heading></Card>
       }
-      <Heading>Select Your Availability Zone</Heading>
+      <Heading>#1. Select Your Availability Zone</Heading>
       <LeafletMap center={[pos.y, pos.x]} zoom={11}>
         <TileLayer
           url="https://{s}.tile.osm.org/{z}/{x}/{y}.png"
@@ -193,7 +203,12 @@ export default () => {
           <Popup>You are here.</Popup>
         </Marker>
         {hexs.map((p, i) => (
-          <Polygon key={i} color={zones.includes(p) ? '#048A0999' : '#AF05F722'}
+          <Polygon key={i}
+            color={
+              !zones.includes(p)
+              ? '#AF05F722'
+              : (p.addr ? '#048A0999' : '#FF7B0099')
+            }
             positions={p}
             onClick={() => {
               setZones((zones) => {
@@ -208,7 +223,6 @@ export default () => {
           />
         ))}
       </LeafletMap>
-      <Button><Icon name='UnfoldLess'/></Button>
       <Table>
         <thead><tr>
           <th>Zone ID</th>
@@ -249,19 +263,21 @@ export default () => {
           <th>Bid</th>
         </tr></thead>
         <tbody>
-          {contracts.map((con) => (
-            <tr>
-              <td>{con.pickup.waypoint}</td>
-              <td>{con.pickup.travelTime}</td>
-              <td>{con.dropoff.waypoint + con.pickup.waypoint}</td>
-              <td>{con.dropoff.travelTime}</td>
-              <td>
-                <Form onSubmit={alert}>
-                  <Input type='number' name='bid' />
-                  <Button>Bid</Button>
-                </Form>
-              </td>
-            </tr>
+          {zones.map((zone) => (
+            (contracts[zone.id] || []).map((con) => (
+              <tr id={zone.id} key={zone.id}>
+                <td>{con.pickup.waypoint}</td>
+                <td>{con.pickup.travelTime}</td>
+                <td>{con.dropoff.waypoint + con.pickup.waypoint}</td>
+                <td>{con.dropoff.travelTime}</td>
+                <td>
+                  <Form onSubmit={alert}>
+                    <Input type='number' name='bid' />
+                    <Button>Bid</Button>
+                  </Form>
+                </td>
+              </tr>
+            ))
           ))}
         </tbody>
       </Table>

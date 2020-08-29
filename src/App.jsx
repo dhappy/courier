@@ -7,6 +7,7 @@ import './App.css'
 import Main from './Main'
 import Jobs from './Jobs'
 import Parcels from './Parcels'
+import Ship from './Ship'
 
 export default () => {
   const [currentNet, setCurrentNet] = useState()
@@ -66,6 +67,9 @@ export default () => {
         </Route>
         <Route path='/parcels'>
           <Parcels />
+        </Route>
+        <Route path='/ship'>
+          <Ship />
         </Route>
       </Switch>
     </Router>

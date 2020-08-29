@@ -38,6 +38,7 @@ The Customer inventories the parcel and reviews the Courier, the parcel contents
 
 ## Faults
 
+* A waypoint could be placed in an inaccessible location. The refutation process requires being at the specific location of the waypoint. This would need to be handled by checking the waypoints when placing the bid to verify it is possible to get with half a kilometer or so from them.
 * The Dealer might not respond to requests for a location. The Courier in this case goes to the waypoint and registers a Wait of, say, five minutes. If the Dealer doesn't communicate in that time period, the Customers escrow is returned minus a Wait fee.
 * The Customer doesn't respond to requests for a location. The same as with the Dealer, in registering a Wait, but the Courier now has a parcel to deal with. It would have to go back to the Dealer eventually. Ideally the Courier would hold it for a while and whenever the Customer comes back online they organize reciept potentially with an additional contract for the Courier to make it back to the waypoint.
 * The Customer doesn't get what was agreed upon. The deal that generated the parcel provides specifics on what it should contain. The Customer is able to review each item and explain how it differed from what was advertized.
