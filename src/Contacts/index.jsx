@@ -56,12 +56,11 @@ export default () => {
       const path = `/contacts/new?key=${pubkey}&alias=${encodeURI(name)}`
       const absolute = `https://pkg.dhappy.org/#${path}`
       return (
-        <Text whiteSpace='nowrap'>
-          <Link to={path} ref={url}>{absolute}</Link>
+        <Flex alignItems='center' alignItems='center' flexDirection='row'>
+          <Link to={path} ref={url} px='10'>{absolute}</Link>
           <Text> </Text>
           <Button onClick={copyKey} title='Copy to Clipboard'><Icon name='Assignment'/></Button>
-        
-        </Text>
+        </Flex>
       )
     }
   }
@@ -69,7 +68,7 @@ export default () => {
   return (
     <Flex alignItems='center' flexDirection='column'>
       <Heading>Contacts</Heading>
-      <Text>To invite contacts, send them this invitation link: {keylink()}.</Text>
+      <Text>To invite contacts, send them this invitation link: {keylink()}</Text>
       <ToastMessage.Provider ref={toast}/>
     </Flex>
   )
