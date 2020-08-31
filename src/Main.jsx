@@ -6,6 +6,14 @@ import './App.css'
 export default () => {
   return (
     <Box>
+      <Card maxWidth='25em' mx='auto' marginTop='1.5em' px={[3, 3, 4]}>
+        <Flex alignItems='center'  flexDirection='column'>
+          <Heading>Both</Heading>
+          <Link to='/contacts'>
+            <Button mx='auto' my='0.5em'>Contacts</Button>
+          </Link>
+        </Flex>
+      </Card>
       <Card maxWidth='25em' mx='auto' marginTop='1.5em'>
         <Flex alignItems='center' flexDirection='column'>
           <Heading>Couriers</Heading>

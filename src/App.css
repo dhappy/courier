@@ -7,3 +7,11 @@
 .sr-only {
   display: none;
 }
+
+a {
+  text-decoration: none;
+}
+
+body {
+  padding-bottom: 75vh;
+}

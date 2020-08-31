@@ -1,13 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { HashRouter as Router, Switch, Route } from 'react-router-dom'
 import ConnectionBanner from '@rimble/connection-banner'
-import { MetaMaskButton, Card, Flex } from "rimble-ui"
+import { MetaMaskButton, Card, Flex } from 'rimble-ui'
 import Web3 from 'web3'
 import './App.css'
 import Main from './Main'
 import Jobs from './Jobs'
 import Parcels from './Parcels'
 import Ship from './Ship'
+import Join from './Join'
+import Find from './Find'
+import Contacts from './Contacts'
+import NewContact from './Contacts/New'
 
 export default () => {
   const [currentNet, setCurrentNet] = useState()
@@ -59,18 +63,14 @@ export default () => {
         }}
       </ConnectionBanner>
       <Switch>
-        <Route path='/' exact>
-          <Main />
-        </Route>
-        <Route path='/jobs'>
-          <Jobs />
-        </Route>
-        <Route path='/parcels'>
-          <Parcels />
-        </Route>
-        <Route path='/ship'>
-          <Ship />
-        </Route>
+        <Route path='/' exact component={Main}/>
+        <Route path='/contacts/new' component={NewContact}/>
+        <Route path='/contacts' component={Contacts}/>
+        <Route path='/jobs' component={Jobs}/>
+        <Route path='/parcels' component={Parcels}/>
+        <Route path='/ship' component={Ship} />
+        <Route path='/contract/join' compoenent={Find} />
+        <Route path='/contracts/:id/join' component={Join} />
       </Switch>
     </Router>
   )
