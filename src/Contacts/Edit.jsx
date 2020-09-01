@@ -11,6 +11,7 @@ export default (props) => {
   const [key, setKey] = useState()
   const [contacts, setContacts] = useState()
   const [box, setBox] = useState()
+  const [imageCID, setImageCID] = useState()
   const [boxLoader, setBoxLoader] = useState(
     <Loader display='inline' title='Opening 3Box…'/>
   )
@@ -37,6 +38,9 @@ export default (props) => {
   const updateBoxProfile = useCallback(async () => {
     setBoxLoader(<Loader color='orange' display='inline' title='Getting 3Box Profile…'/>)
     const profile = await Box.getProfile(addr)
+    if(profile.image && profile.image.length > 0) {
+      setImageCID(profile.image[0].contentUrl['/'])
+    }
     setBoxProfile(
       (!profile || Object.keys(profile).length === 0)
       ? <i>Empty</i>
@@ -61,7 +65,6 @@ export default (props) => {
       setContacts(contacts)
 
       const existing = await contacts.private.get(addr)
-      console.info(existing)
       if(existing) {
         setNames(names => [...(new Set(
           [...(names || []), ...existing.names]
@@ -86,8 +89,11 @@ export default (props) => {
 
   return (
     <Card width='50%' margin='auto'>
-      <Heading>Edit a Contact</Heading>
-      
+      <Flex flexDirection='row' alignItems='center'>
+        {imageCID && <img className='avatar' src={`//ipfs.io/ipfs/${imageCID}`}/>}
+        <Heading ml={15}>Edit a Contact</Heading>
+      </Flex>
+
       <ul>
         <li>
           <Flex flexDirection='row'>
@@ -110,7 +116,7 @@ export default (props) => {
                       )
                     }}
                   />
-                  <Button title='Delete' mx={2} variant='danger'
+                  <Button title='Delete' mx={2} variant='danger' icon='Delete'
                     onClick={() => setNames(names => {
                       if(names.length === 1) {
                         return ['']
@@ -118,12 +124,12 @@ export default (props) => {
                         return [...names.slice(0, idx), ...names.slice(idx + 1)]
                       }
                     })}
-                  >❌</Button>
-                  <Button title='Add'
+                  />
+                  <Button title='Add' icon='Add'
                     onClick={() => setNames(names => {
                       return [...names.slice(0, idx + 1), '', ...names.slice(idx + 1)]
                     })}
-                  >➕</Button>
+                  />
                 </li>
               ))}
             </ul>

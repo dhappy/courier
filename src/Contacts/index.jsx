@@ -7,6 +7,7 @@ import {
 import { HashLink as Link } from 'react-router-hash-link'
 import Box from '3box'
 import Web3 from 'web3'
+import { commafy } from '../utils'
 
 export default () => {
   const [pubkey, setPubKey] = useState()
@@ -33,7 +34,21 @@ export default () => {
       const contacts = await box.openSpace('courier-contacts')
       await contacts.syncDone
       setContacts(contacts)
-      setInfo(await contacts.private.all())
+      const info = await contacts.private.all()
+      setInfo(info)
+      const keys = `[${Object.keys(info).map(k => `"${k}"`).join(',')}]`
+      const query = (
+        `{ profiles(ids: ${keys}) { name eth_address image } }`
+      )
+      const profiles = (await Box.profileGraphQL(query)).profiles
+      setInfo((info) => {
+        let cp = {...info}
+        for(let profile of profiles) {
+          cp[profile.eth_address].image = profile.image
+          cp[profile.eth_address].name3 = profile.name
+        }
+        return cp
+      })
     }
   }
 
@@ -102,20 +117,6 @@ export default () => {
     }
   }
 
-  const commafy = (list) => {
-    const len = list.length
-    if(len === 0 || len === 1) {
-      return list[0]
-    } else if(len === 2) {
-      return `${list[0]} & ${list[1]}}`
-    } else {
-      return [
-        list.slice(0, len - 1).join(', '),
-        list.slice(-1)[0]
-      ].join(', & ')
-    }
-  }
-
   return (
     <Flex alignItems='center' flexDirection='column' position='relative'>
       <Heading>Contacts</Heading>
@@ -155,12 +156,15 @@ export default () => {
           ? <Heading>No Contacts</Heading>
           : (
             <Table>
-              <thead><tr><th>Names</th><th>Address</th><th>Actions</th></tr></thead>
+              <thead><tr>
+                <th>Avatar</th><th>Names</th><th>3Box Name</th><th>Actions</th>
+              </tr></thead>
               <tbody>
                 {Object.entries(info).map(([addr, info]) => (
                   <tr key={addr}>
+                    <td>{info.image && <img className='avatar' src={`//ipfs.io/ipfs/${info.image}`}/>}</td>
                     <td title={`Public Key: ${info.key}`}>{commafy(info.names)}</td>
-                    <td><a href={`//3box.io/${addr}`} target='_blank' title='3Box Profile'>{addr}</a></td>
+                    <td><a href={`//3box.io/${addr}`} target='_blank' title='3Box Profile'>{info.name3}</a></td>
                     <td>
                       <Link to={`/contacts/${addr}/edit`}>
                         <Button icon='Edit' mx={1}>Edit</Button>

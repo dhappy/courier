@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { Flex, Heading, Text, Button, Icon, Input, Card, Loader } from 'rimble-ui'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Heading, Button, Input, Card, Loader } from 'rimble-ui'
 import { HashLink as Link } from 'react-router-hash-link'
 import { useLocation, Redirect } from 'react-router-dom'
 import Box from '3box'
@@ -19,16 +19,16 @@ export default () => {
   )
   const [saveText, setSaveText] = useState('Save')
 
-  const load3Box = async () => {
+  const load3Box = useCallback(async () => {
     const user = (
       await window.ethereum.request({ method: 'eth_requestAccounts' })
     )[0]
     setBox(await Box.openBox(user, Web3.givenProvider))
-  }
+  }, [])
 
-  useEffect(() => { load3Box() }, [])
+  useEffect(() => { load3Box() }, [load3Box])
 
-  const updateBoxProfile = async () => {
+  const updateBoxProfile = useCallback(async () => {
     setBoxProfile(<Loader color='orange' display='inline' title='Getting 3Box Profile…'/>)
     const profile = await Box.getProfile(addr)
     setBoxProfile(
@@ -44,11 +44,11 @@ export default () => {
         </ul>
       )
     )
-  }
+  }, [addr])
 
-  useEffect(() => { updateBoxProfile() }, [])
+  useEffect(() => { updateBoxProfile() }, [updateBoxProfile])
 
-  const loadContacts = async () => {
+  const loadContacts = useCallback(async () => {
     if(box) {
       const contacts = await box.openSpace('courier-contacts')
       await contacts.syncDone
@@ -61,17 +61,21 @@ export default () => {
         ))])
       }
     }
-  }
+  }, [])
 
-  useEffect(() => { loadContacts() }, [box])
+  useEffect(() => { loadContacts() }, [loadContacts, box])
 
   const saveContact = async () => {
-    setSaveText(<Loader color='white'/>)
-    await contacts.private.set(addr, {
-      key: key,
-      names: [...new Set(names.filter(n => n.trim() !== ''))],
-    })
-    setSaveText('Done')
+    if(!contacts) {
+      console.error("Contact space isn't set")
+    } else {
+      setSaveText(<Loader color='white'/>)
+      await contacts.private.set(addr, {
+        key: key,
+        names: [...new Set(names.filter(n => n.trim() !== ''))],
+      })
+      setSaveText('Done')
+    }
   }
 
   return (
@@ -96,7 +100,7 @@ export default () => {
                     )
                   }}
                 />
-                <Button title='Delete' mx={2} variant='danger'
+                <Button title='Delete' mx={2} variant='danger' icon='Delete'
                   onClick={() => setNames(names => {
                     if(names.length === 1) {
                       return ['']
@@ -104,12 +108,12 @@ export default () => {
                       return [...names.slice(0, idx), ...names.slice(idx + 1)]
                     }
                   })}
-                >❌</Button>
-                <Button title='Add'
+                />
+                <Button title='Add' icon='Add'
                   onClick={() => setNames(names => {
                     return [...names.slice(0, idx + 1), '', ...names.slice(idx + 1)]
                   })}
-                >➕</Button>
+                />
               </li>
             ))}
           </ul>

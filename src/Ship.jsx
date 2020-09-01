@@ -1,27 +1,30 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import {
   Map as LeafletMap, Marker, Popup, TileLayer,
   Circle, Polyline, SVGOverlay
 } from 'react-leaflet'
 import {
-  Text, Card, Flex, Heading, Button, Box,
-  Loader, Icon, Tooltip, Input, EthAddress
+  Text, Card, Flex, Heading, Button, Input, Table, Loader,
+  Radio, Field
 } from 'rimble-ui'
 import { v5 as UUIDv5 } from 'uuid'
 import UUIDEncoder from 'uuid-encoder'
 import { HashLink as Link } from 'react-router-hash-link'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/ScrollTrigger'
+import Box from '3box'
+import Web3 from 'web3'
 import './App.css'
+import { commafy, capitalize, distanceBetween } from './utils'
 
 export default (props) => {
-  const [index, setIndex] = useState(props.match.params.index || 0)
   const [type, setType] = useState()
   const [pos, setPos] = useState({ lat: 53, lng: 12 })
   const [mark, setMark] = useState(pos)
   const [r, setBoundsRadius] = useState(200)
   const [time, setTime] = useState({})
-  const [waypoint, setWaypoint] = useState({})
+  const [waypoints, setWaypoints] = useState({})
+  const [contacts, setContacts] = useState()
   const [bond, setBond] = useState()
   const [joinCode] = useState(
     (new UUIDEncoder('base58'))
@@ -67,6 +70,18 @@ export default (props) => {
     // })
   }, [])
 
+  const loadContacts = useCallback(async () => {
+    const user = (
+      await window.ethereum.request({ method: 'eth_requestAccounts' })
+    )[0]
+    const box = await Box.openBox(user, Web3.givenProvider)
+    const contacts = await box.openSpace('courier-contacts')
+    await contacts.syncDone
+    setContacts(await contacts.private.all())
+  }, [])
+
+  useEffect(() => { loadContacts() }, [loadContacts])
+
   useEffect(() => {
     const success = (pos) => {
       const actual = { lat: pos.coords.latitude, lng: pos.coords.longitude }
@@ -77,33 +92,14 @@ export default (props) => {
     navigator.geolocation.getCurrentPosition(success, error)
   }, [])
 
+  useEffect(() => {
+    const hashchange = () => alert(window.location.hash)
+    window.addEventListener('hashchange', hashchange)
+    return () => window.removeEventListener('hashchange', hashchange)
+  }, [])
+
   const updateType = (type) => {
     setType(type)
-    setIndex(idx => idx + 1)
-  }
-
-  const capitalize = (word) => (
-    (word || '').split('-')
-    .map(p => ((p[0] && p[0].toUpperCase()) || '') + p.slice(1))
-    .join('-')
-  )
-
-  // https://stackoverflow.com/a/43208163
-  const toRadian = degree => degree * Math.PI / 180
-  const distanceBetween = (origin, destination) => {
-    const p = {
-      1: { lat: toRadian(origin.lat), lng: toRadian(origin.lng) },
-      2: { lat: toRadian(destination.lat), lng: toRadian(destination.lng) },
-    }
-    const delta = { lat: p[2].lat - p[1].lat, lng: p[2].lng - p[1].lng }
-    const a = (
-      Math.pow(Math.sin(delta.lat / 2), 2)
-      + Math.cos(p[1].lat) * Math.cos(p[2].lat)
-      * Math.pow(Math.sin(delta.lng / 2), 2)
-    )
-    const c = 2 * Math.asin(Math.sqrt(a))
-    const EARTH_RADIUS = 6371000 // meters
-    return c * EARTH_RADIUS
   }
 
   const delta = { lat: mark.lat - pos.lat, lng: mark.lng - pos.lng }
@@ -196,14 +192,32 @@ export default (props) => {
               }}
             />
           </Flex>
-          <Link to='#3'><Button>Next</Button></Link>            
+          <Link to='#3'><Button onClick={
+            () => setWaypoints(wps => ({...wps, [type]: mark}))
+          }>Next</Button></Link>            
         </Flex>
       </Card>
       <Card id='3' className='card'>
         <Flex alignItems='center' flexDirection='column'>
           <Heading>Who are you {type === 'pick-up' ? 'sending it to' : 'getting it from'}?</Heading>
-          <Text>One aspect of the system is that you only know the waypoint of the other party. The courier has a private chat with each party where they orchestrate their specific meeting.</Text>
-          <Text>You can invite the {type === 'pick-up' ? 'recipient' : 'sender'} by sending them this url: <Link to={joinPath}>{joinURL}</Link></Text>
+          {!contacts
+            ? <>
+              <Heading>Loading Contacts</Heading>
+              <Loader/>
+            </>
+            :(
+              <Table>
+                <thead><tr><th>Select</th><th>Name</th></tr></thead>
+                <tbody>
+                  {Object.entries(contacts).map(([addr, contact]) => (
+                    <tr key={addr}>
+                      <td><Radio/></td><td>{commafy(contact.names)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            )
+          }
         </Flex>
       </Card>
       <Card id='4' className='card'>

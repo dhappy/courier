@@ -10,6 +10,7 @@ import Box from '3box'
 //import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import Web3 from 'web3'
+import { distanceBetween } from './utils'
 
 const creator = '0xC33290860C1DA6a84195C5cf1575860d3A3ED73d' // to look up zones space
 const zonesSpace = 'courier-zones'
@@ -234,22 +235,7 @@ export default () => {
             <tr key={zone.id}>
               <td>{zone.id}</td>
               <td>{zone.contracts.length}</td>
-              <td>{(() => {
-                // https://www.geeksforgeeks.org/program-distance-two-points-earth/
-                // d = 3963.0 * arccos[(sin(lat1) * sin(lat2)) + cos(lat1) * cos(lat2) * cos(long2 – long1)]
-                const rad = {
-                  1: { lat: pos.y / 180 / Math.PI, long: pos.x / 180 / Math.PI }, 
-                  2: { lat: zone.center.y / 180 / Math.PI, long: zone.center.x / 180 / Math.PI }, 
-                }
-                const dist = (
-                  3963.0 * Math.acos(
-                    Math.sin(rad[1].lat) * Math.sin(rad[2].lat)
-                    + Math.cos(rad[1].lat) * Math.cos(rad[2].lat)
-                    * Math.cos(rad[2].long - rad[1].long)
-                  )
-                )
-                return `${dist.toFixed(2)}mi`
-              })()}</td>
+              <td>{distanceBetween(origin, zone.center)}</td>
             </tr>
           ))}
         </tbody>

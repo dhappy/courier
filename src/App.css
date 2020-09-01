@@ -12,6 +12,11 @@ a {
   text-decoration: none;
 }
 
-body {
-  padding-bottom: 75vh;
+.card {
+  min-width: 50vw;
+  margin: 0 25vw;
+}
+
+.avatar {
+  max-height: 3em;
 }
