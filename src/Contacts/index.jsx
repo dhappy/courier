@@ -5,6 +5,7 @@ import { HashLink as Link } from 'react-router-hash-link'
 export default () => {
   const [pubkey, setPubKey] = useState()
   const [name, setName] = useState('')
+  const [addr, setAddr] = useState()
   const url = useRef(null)
   const toast = useRef(null)
 
@@ -13,6 +14,7 @@ export default () => {
       const accounts = (
         await window.ethereum.request({ method: 'eth_requestAccounts' })
       )
+      setAddr(accounts[0])
       setPubKey(await window.ethereum.request({
         jsonrpc: '2.0',
         method: 'eth_getEncryptionPublicKey',
@@ -48,18 +50,20 @@ export default () => {
     if(!pubkey) {
       return <>
         <Input placeholder='What do they call you?'
-          value={name} onChange={(evt) => setName(evt.target.value)}
+          value={name} onChange={evt => setName(evt.target.value)}
+          onKeyDown={evt => { if(evt.key.toLowerCase() === 'enter') { getPubKey() } else { console.info(evt.key) } }}
         />
         <Button onClick={getPubKey}>Generate</Button>
       </>
     } else {
-      const path = `/contacts/new?key=${pubkey}&alias=${encodeURI(name)}`
+      const path = `/contacts/new?key=${pubkey}&alias=${encodeURI(name)}&address=${addr}`
       const absolute = `https://pkg.dhappy.org/#${path}`
       return (
-        <Flex alignItems='center' alignItems='center' flexDirection='row'>
-          <Link to={path} ref={url} px='10'>{absolute}</Link>
-          <Text> </Text>
-          <Button onClick={copyKey} title='Copy to Clipboard'><Icon name='Assignment'/></Button>
+        <Flex alignItems='center' justifyContent='center' flexDirection='row'>
+          <Link to={path} ref={url}>{absolute}</Link>
+          <Button onClick={copyKey} title='Copy to Clipboard' mx={2} size='small'>
+            <Icon name='Assignment'/>
+          </Button>
         </Flex>
       )
     }
