@@ -1,13 +1,43 @@
-import React, { useState, useRef } from 'react'
-import { Flex, Heading, Text, Button, Icon, Input, ToastMessage } from 'rimble-ui'
+import React, { useState, useRef, useEffect } from 'react'
+import {
+  Box as LayoutBox, Flex, Heading, Text,
+  Button, Icon, Input, ToastMessage,
+  Modal, Card, Table, Loader
+} from 'rimble-ui'
 import { HashLink as Link } from 'react-router-hash-link'
+import Box from '3box'
+import Web3 from 'web3'
 
 export default () => {
   const [pubkey, setPubKey] = useState()
   const [name, setName] = useState('')
   const [addr, setAddr] = useState()
+  const [box, setBox] = useState()
+  const [info, setInfo] = useState()
+  const [contacts, setContacts] = useState()
+  const [modalOpen, setModalOpen] = useState(false)
   const url = useRef(null)
   const toast = useRef(null)
+
+  const load3Box = async () => {
+    const user = (
+      await window.ethereum.request({ method: 'eth_requestAccounts' })
+    )[0]
+    setBox(await Box.openBox(user, Web3.givenProvider))
+  }
+
+  useEffect(() => { load3Box() }, [])
+
+  const loadContacts = async () => {
+    if(box) {
+      const contacts = await box.openSpace('courier-contacts')
+      await contacts.syncDone
+      setContacts(contacts)
+      setInfo(await contacts.private.all())
+    }
+  }
+
+  useEffect(() => { loadContacts() }, [box])
 
   const getPubKey = async () => {
     try {
@@ -51,7 +81,7 @@ export default () => {
       return <>
         <Input placeholder='What do they call you?'
           value={name} onChange={evt => setName(evt.target.value)}
-          onKeyDown={evt => { if(evt.key.toLowerCase() === 'enter') { getPubKey() } else { console.info(evt.key) } }}
+          onKeyDown={evt => { if(evt.key.toLowerCase() === 'enter') getPubKey() }}
         />
         <Button onClick={getPubKey}>Generate</Button>
       </>
@@ -59,20 +89,102 @@ export default () => {
       const path = `/contacts/new?key=${pubkey}&alias=${encodeURI(name)}&address=${addr}`
       const absolute = `https://pkg.dhappy.org/#${path}`
       return (
-        <Flex alignItems='center' justifyContent='center' flexDirection='row'>
-          <Link to={path} ref={url}>{absolute}</Link>
-          <Button onClick={copyKey} title='Copy to Clipboard' mx={2} size='small'>
-            <Icon name='Assignment'/>
-          </Button>
-        </Flex>
+        <>
+          <Text>To invite contacts, send them this:</Text>
+          <Flex alignItems='center' justifyContent='center' flexDirection='row'>
+            <Link to={path} ref={url}>{absolute}</Link>
+            <Button onClick={copyKey} title='Copy to Clipboard' mx={2} size='small'>
+              <Icon name='Assignment'/>
+            </Button>
+          </Flex>
+        </>
       )
     }
   }
 
+  const commafy = (list) => {
+    const len = list.length
+    if(len === 0 || len === 1) {
+      return list[0]
+    } else if(len === 2) {
+      return `${list[0]} & ${list[1]}}`
+    } else {
+      return [
+        list.slice(0, len - 1).join(', '),
+        list.slice(-1)[0]
+      ].join(', & ')
+    }
+  }
+
   return (
-    <Flex alignItems='center' flexDirection='column'>
+    <Flex alignItems='center' flexDirection='column' position='relative'>
       <Heading>Contacts</Heading>
-      <Text>To invite contacts, send them this invitation link: {keylink()}</Text>
+
+      <Button onClick={() => setModalOpen(true)} icon='Share'
+        position='absolute' top={0} right={0} mt={3} mr={3}
+        title='Invite Contacts'
+      />
+      <Modal isOpen={modalOpen}>
+        <Card p={0}>
+          <Button.Text icononly icon='Close' color='moon-gray'
+            position='absolute' top={0} right={0} mt={3} mr={3}
+            onClick={() => setModalOpen(false)} title='Close'
+          />
+
+          <LayoutBox p={4} mb={3}>
+            <Heading>Invitation Link</Heading>
+            {keylink()}
+          </LayoutBox>
+
+          <Flex px={4} py={3} borderTop={1}
+            borderColor='#E8E8E8' justifyContent='flex-end'
+          >
+            <Button onClick={() => { setPubKey(); setModalOpen(false) }}
+            >Done</Button>
+          </Flex>
+        </Card>
+      </Modal>
+
+      {!info
+        ? (
+          <Card><Flex alignItems='center' flexDirection='column'>
+            <Text>Loading Contacts</Text><Loader size='large' mt={3}/>
+          </Flex></Card>
+        )
+        : (Object.keys(info).length === 0
+          ? <Heading>No Contacts</Heading>
+          : (
+            <Table>
+              <thead><tr><th>Names</th><th>Address</th><th>Actions</th></tr></thead>
+              <tbody>
+                {Object.entries(info).map(([addr, info]) => (
+                  <tr key={addr}>
+                    <td title={`Public Key: ${info.key}`}>{commafy(info.names)}</td>
+                    <td><a href={`//3box.io/${addr}`} target='_blank' title='3Box Profile'>{addr}</a></td>
+                    <td>
+                      <Link to={`/contacts/${addr}/edit`}>
+                        <Button icon='Edit' mx={1}>Edit</Button>
+                      </Link>
+                      <Button variant='danger' icon='Delete' mx={1}
+                        onClick={() => {
+                          if(window.confirm(`Really Delete: ${commafy(info.names)}?`)) {
+                            contacts.private.remove(addr)
+                            setInfo(info => {
+                              const cp = {...info}
+                              delete(cp[addr])
+                              return cp
+                            })
+                          }
+                        }}
+                      >Delete</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )
+        )
+      }
       <ToastMessage.Provider ref={toast}/>
     </Flex>
   )

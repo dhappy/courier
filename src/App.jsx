@@ -12,6 +12,7 @@ import Join from './Join'
 import Find from './Find'
 import Contacts from './Contacts'
 import NewContact from './Contacts/New'
+import EditContact from './Contacts/Edit'
 
 export default () => {
   const [currentNet, setCurrentNet] = useState()
@@ -64,6 +65,7 @@ export default () => {
       </ConnectionBanner>
       <Switch>
         <Route path='/' exact component={Main}/>
+        <Route path='/contacts/:address/edit' component={EditContact}/>
         <Route path='/contacts/new' component={NewContact}/>
         <Route path='/contacts' component={Contacts}/>
         <Route path='/jobs' component={Jobs}/>

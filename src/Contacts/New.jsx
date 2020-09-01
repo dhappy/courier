@@ -68,7 +68,8 @@ export default () => {
   const saveContact = async () => {
     setSaveText(<Loader color='white'/>)
     await contacts.private.set(addr, {
-      names: [...new Set(names)], key: key
+      key: key,
+      names: [...new Set(names.filter(n => n.trim() !== ''))],
     })
     setSaveText('Done')
   }
@@ -82,7 +83,7 @@ export default () => {
           <b>Names:</b>
           <ul>
             {names.map((name, idx) => (
-              <li>
+              <li key={idx}>
                 <Input ml={2} value={name} my={2}
                   onChange={(evt) => {
                     const newName = evt.target.value
