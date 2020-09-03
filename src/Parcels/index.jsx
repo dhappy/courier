@@ -3,7 +3,7 @@ import {
   Tooltip, Button, Card, Icon,
   Flex, Heading, Field, Input
 } from "rimble-ui"
-import QRReader from './QRReader'
+import QRReader from '../QRReader'
 
 export default () => {
   const [scanning, setScanning] = useState(false)

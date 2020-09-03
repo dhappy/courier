@@ -7,6 +7,7 @@ import './App.css'
 import Main from './Main'
 import Jobs from './Jobs'
 import Parcels from './Parcels'
+import ViewParcel from './Parcels/View'
 import Ship from './Ship'
 import Join from './Join'
 import Find from './Find'
@@ -69,6 +70,8 @@ export default () => {
         <Route path='/contacts/new' component={NewContact}/>
         <Route path='/contacts' component={Contacts}/>
         <Route path='/jobs' component={Jobs}/>
+        <Route path='/cel/:guid' component={ViewParcel}/>
+        <Route path='/view/:guid' component={ViewParcel}/>
         <Route path='/parcels' component={Parcels}/>
         <Route path='/ship' component={Ship} />
         <Route path='/contract/join' compoenent={Find} />
