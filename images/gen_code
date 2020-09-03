@@ -1,0 +1,10 @@
+#!/bin/bash
+
+export ISOTIME=$(date +%Y-%m-%d@%H:%M:%S%:z)
+export GUID=$(uuid -F BIN | base58)
+# Uncovered package seal
+echo "https://pkg.dhappy.org/cel/$GUID" | qrencode -t SVG -l M > "(pkg.view).$ISOTIME.$GUID.svg"
+
+export GUID=$(uuid -F BIN | base58)
+# Covered package review / ygg invites
+echo "https://sw.dhappy.org/cel/$GUID" | qrencode -t SVG -l L > "(switch.pkg).$ISOTIME.$GUID.svg"
