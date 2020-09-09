@@ -5,7 +5,7 @@ import {
 } from 'react-leaflet'
 import {
   Text, Card, Flex, Heading, Button, Input, Table, Loader,
-  Radio, Field, Checkbox, Box as LayoutBox
+  Radio, Field, Checkbox, Box as LayoutBox, Icon
 } from 'rimble-ui'
 import { v5 as UUIDv5 } from 'uuid'
 import UUIDEncoder from 'uuid-encoder'
@@ -16,6 +16,7 @@ import Box from '3box'
 import Web3 from 'web3'
 import { v5 as uuidv5 } from 'uuid'
 import * as base58 from 'bs58'
+import * as sigUtil from 'eth-sig-util'
 import { commafy, capitalize, distanceBetween, chunk } from '../utils'
 import QRReader from '../QRReader'
 
@@ -24,17 +25,13 @@ export default (props) => {
   const [pos, setPos] = useState({ lat: 53, lng: 12 })
   const [mark, setMark] = useState(pos)
   const [r, setBoundsRadius] = useState(200)
-  const [time, setTime] = useState({})
   const [other, setOther] = useState()
-  const [waypoints, setWaypoints] = useState({})
+  const [time, setTime] = useState(0)
   const [contacts, setContacts] = useState()
-  const [bond, setBond] = useState()
+  const [bond, setBond] = useState(0)
   const [couriers, setCouriers] = useState([])
-  const [box, setBox] = useState()
-  const [joinCode] = useState(
-    (new UUIDEncoder('base58'))
-    .encode(UUIDv5('//pkg.dhappy.org', UUIDv5.URL))
-  )
+  const [scanner, setScanner] = useState(false) // show QR code scanner
+  const web3 = new Web3(Web3.givenProvider)
   const buffer = new Array()
   const uuid = uuidv5('https://pkg.dhappy.org', uuidv5.URL, buffer)
   let b58 = base58.encode(buffer)
@@ -46,7 +43,7 @@ export default (props) => {
     // let sections = gsap.utils.toArray('.card')
     // console.info(sections.length)
     // gsap.to(sections, {
-    //   xPercent: -100 * (sections.length - 1),
+    //   yPercent: -100 * (sections.length - 1),
     //   ease: 'none',
     //   scrollTrigger: {
     //     trigger: '.cards',
@@ -80,7 +77,6 @@ export default (props) => {
       await window.ethereum.request({ method: 'eth_requestAccounts' })
     )[0]
     const box = await Box.openBox(user, Web3.givenProvider)
-    setBox(box)
     const contacts = await box.openSpace('courier-contacts')
     await contacts.syncDone
     setContacts(await contacts.private.all())
@@ -89,13 +85,22 @@ export default (props) => {
   useEffect(() => { loadContacts() }, [loadContacts])
 
   useEffect(() => {
-    const success = (pos) => {
-      const actual = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-      setPos(actual)
-      setMark(actual)
-    }
-    const error = (err) => alert(`Error Getting Current Position: '${err.message}'`)
-    navigator.geolocation.getCurrentPosition(success, error)
+    navigator.permissions.query({name: 'geolocation'})
+    .then((result) => {
+      if(result.state === 'granted' || result.state == 'prompt') {
+        const success = (pos) => {
+          const actual = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          setPos(actual)
+          setMark(actual)
+        }
+        const error = (err) => alert(`Error Getting Current Position: '${err.message}'`)
+        navigator.geolocation.getCurrentPosition(success, error)
+      } else if(result.state == 'denied') {
+        alert("Couldn't Access GPS")
+      } else {
+        alert(`Unknown GPS Code: ${result.state}`)
+      }
+    })
   }, [])
 
   useEffect(() => {
@@ -124,19 +129,99 @@ export default (props) => {
   const dragMarker = (evt) => {
     setMark(evt.latlng)
     setBoundsRadius(distanceBetween(pos, evt.latlng))
-    setTime(time => ({...time, [type]: r / 750 }))
+    setTime(r / 750)
   }
 
-  const navbuttons = ({ idx, onBack, onNext }) => (
-    <Flex justifyContent='flex-end' flexDirection='row'>
+  const pageIcons = ['Mail', 'Map', 'Info', 'MarkunreadMailbox', 'Dai', 'LocalTaxi', 'Save']
+  const pageDescs = [
+    'Configure whether sending or receiving.',
+    'Choose a waypoint and travel time for meeting the courier.',
+    'Set the package id.',
+    'Choose the party for the other end of your transaction.',
+    'Specify the bond you would like on the delivery.',
+    'Choose couriers to request bids from.',
+    'Review the contract and send it for completion.',
+  ]
+
+  const navbuttons = ({ idx, onBack, onNext, nextAvail = true }) => (
+    <Flex mt={25} mb={200} justifyContent='flex-end' alignItems='center' flexDirection='row'>
+      {[...new Array(pageIcons.length)].map((_, i) =>
+        <Link to={`#${i + 1}`}>
+          {i + 1 !== idx
+            ? <Button.Outline size='small' icon={pageIcons[i % pageIcons.length]}
+                title={pageDescs[i % pageDescs.length]} px={0} mx={0} mt={4}
+              />
+            : <Button size='small' icon={pageIcons[i % pageIcons.length]}
+                title={pageDescs[i % pageDescs.length]} px={0} mx={1} mt={4}
+              />
+          }
+        </Link>
+      )}
       <Link to={`#${idx - 1}`}>
         <Button.Outline onClick={onBack} icon='ArrowBack' mt={3} mx={1}>Back</Button.Outline>
       </Link>
-      <Link to={`#${idx + 1}`}>
-        <Button onClick={onNext} icon='ArrowForward' mt={3} mx={1}>Next</Button>
+      <Link to={`#${idx + 1}`} disabled={!nextAvail}>
+        <Button onClick={onNext} icon='ArrowForward' mt={3} mx={1} disabled={!nextAvail}>Next</Button>
       </Link>            
     </Flex>
   )
+
+  const signContract = async (tract) => {
+    const Domain = [
+      { name: 'name', type: 'string' },
+      { name: 'version', type: 'string' },
+      { name: 'chainId', type: 'uint256' },
+      { name: 'salt', type: 'bytes32' },
+    ]
+    const Contract = [
+      { name: 'dropoff', type: 'AnonLocation' },
+      { name: 'pickup', type: 'AnonLocation' },
+      { name: 'bond', type: 'uint256' },
+    ]
+    const AnonLocation = [
+      { name: 'lat', type: 'int64' },
+      { name: 'lng', type: 'int64' },
+      { name: 'travelTime', type: 'uint32' },
+    ]
+
+    const salt = new Uint32Array(16)
+    window.crypto.getRandomValues(salt)
+
+    const data = {
+      domain: {
+        name: 'Courier',
+        version: '0.2.4',
+        chainId: await web3.eth.net.getId(), // 4, // Rinkeby
+        salt: '0x' + Buffer.from(salt).toString('hex'),
+      },
+      contract: tract,
+    }
+
+    const payload = JSON.stringify({
+      types: {
+          EIP712Domain: Domain,
+          Contract,
+          AnonLocation,
+      },
+      domain: data.domain,
+      primaryType: 'Contract',
+      message: data.contract,
+    })
+    console.info(payload)
+
+    const user = (
+      await window.ethereum.request({ method: 'eth_requestAccounts' })
+    )[0]
+    const sig = await window.ethereum.request({
+      method: 'eth_signTypedData_v4',
+      params: [user, payload],
+      from: user
+    })
+    // const signer = await sigUtil.recoverTypedSignature_v4(
+    //   { data: JSON.parse(payload), sig }
+    // )
+    return sig
+  }
 
   return (
     <Flex className='cards' flexDirection='column'>
@@ -170,7 +255,7 @@ export default (props) => {
             <Circle center={pos} radius={r}/>
             <Polyline positions={[pos, mark]}/>
             <SVGOverlay bounds={textBounds}>
-              <text x="50%" y="50%" fill='black' fontSize={25} stroke='black' textAnchor='middle'>{time[type] && `${time[type].toFixed(1)}min`}</text>
+              <text x="50%" y="50%" fill='black' fontSize={25} stroke='black' textAnchor='middle'>{time && `${time.toFixed(1)}min`}</text>
             </SVGOverlay>
           </LeafletMap>
           <Flex alignItems='center' flexDirection='row'>
@@ -204,7 +289,7 @@ export default (props) => {
             <Input
               width='4em'
               type='number'
-              value={Math.ceil(time[type] || 0).toFixed(0)}
+              value={Math.ceil(time || 0).toFixed(0)}
               onChange={(evt) => {
                 const when = (
                   evt.target.value !== '' ? parseFloat(evt.target.value) : time[type]
@@ -212,30 +297,32 @@ export default (props) => {
                 setTime(time => ({...time, [type]: when}))
               }}
             />
-            <Text>minute{time[type] === '1' ? '' : 's'}</Text>
+            <Text>minute{time === '1' ? '' : 's'}</Text>
           </Flex>
         </Flex>
-        {navbuttons({
-          idx: 2,
-          onNext: () => setWaypoints(wps => ({...wps, [type]: mark}))
-        })}
+        {navbuttons({ idx: 2 })}
       </Card>
       <Card id='3' className='card'>
         <Flex alignItems='center' flexDirection='column'>
           <Heading>What is the package id?</Heading>
-          <Text fontSize={22}>Every parcel in the network has a unique identifier that should be scannable as a QR code or NFC tag. Barring that, the id should be written on the package.</Text>
-          <Flex alignItems='center' flexDirection='column'>
+          <Text fontSize={22}>Every parcel in the network has a unique identifier that should be <Link to='/labels'>scannable as a QR code</Link> or NFC tag. Barring that, the id should be written on the package.</Text>
+          <Flex alignItems='center' flexDirection='row'>
             <Input width='35ch' value={guid} textAlign='center' />
-            <Button icon='Close'/>
-            <QRReader onScan={(data) => {
-              if(data) {
-                const match = data.match(/^(https?:)?\/\/pkg.dhappy.org\/cel\/([^\/]+)/i)
-                if(match) {
-                  setGUID(match[2])
-                }
-              }
-            }}/>
+            <Button icon='Pages' title='Scan QR Code' onClick={() => setScanner(true)}/>
           </Flex>
+          {scanner &&
+            <Card>
+              <QRReader onScan={(data) => {
+                if(data) {
+                  const match = data.match(/^(https?:)?\/\/pkg.dhappy.org\/(#\/)?cel\/([^\/]+)/i)
+                  if(match) {
+                    setGUID(match[3])
+                    setScanner(false)
+                  }
+                }
+              }}/>
+            </Card>
+          }
         </Flex>
         {navbuttons({ idx: 3 })}
       </Card>
@@ -285,6 +372,7 @@ export default (props) => {
                 setBond(bond)
               }}
             />
+            <Text><Icon name='Dai'/> DAI</Text>
           </Flex>
         </Flex>
         {navbuttons({ idx: 5 })}
@@ -343,27 +431,37 @@ export default (props) => {
             {couriers.map((c, i) => <li key={i}>{commafy(c.names)}</li>)}
           </ul>
         </Flex>
-        {navbuttons({ idx: 7, onNext: async (evt) => {
-          const user = (
-            await window.ethereum.request({ method: 'eth_requestAccounts' })
-          )[0]
-          const box = await Box.openBox(user, Web3.givenProvider)
-          const parcels = await box.openSpace('courier-parcels')
-          await parcels.waitSync
-          const guidBytes = base58.decode(guid.replace(/-/g, ''))
-          const digest = await crypto.subtle.digest('SHA-256', guidBytes)
-          const hash = base58.encode(Buffer.from(digest))
-          const threadName = `bids-${hash}`
-          const thread = await parcels.createConfidentialThread(threadName)
-          
-          const contract = {
-            time, waypoints, bond,
-          }
+        {navbuttons({ idx: 7, nextAvail: type !== undefined,
+          onNext: async (evt) => {
+            const user = (
+              await window.ethereum.request({ method: 'eth_requestAccounts' })
+            )[0]
+            const box = await Box.openBox(user, Web3.givenProvider)
+            const parcels = await box.openSpace('courier-parcels')
+            await parcels.waitSync
+            const guidBytes = base58.decode(guid.replace(/-/g, ''))
+            const digest = await crypto.subtle.digest('SHA-256', guidBytes)
+            const hash = base58.encode(Buffer.from(digest))
+            const threadName = `bids-${hash}`
+            const thread = await parcels.createConfidentialThread(threadName)
+            //thread.addMember()
+            console.info(other)
 
-          console.info(contract)
-          const posts = await thread.getPosts()
-          console.info(posts)
-        }})}
+            const contract = {
+              bond: `${(bond || 0) * Math.pow(10, 18)}`,
+              [type]: {
+                lat: Math.round(mark.lat * Math.pow(10, 6)),
+                lng: Math.round(mark.lng * Math.pow(10, 6)),
+                travelTime: Math.round(time * 60),
+              },
+            }
+            contract.sig = [await signContract(contract)]
+
+            console.info(contract)
+
+            const posts = await thread.getPosts()
+          }
+        })}
       </Card>
     </Flex>
   )

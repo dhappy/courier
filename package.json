@@ -9,6 +9,7 @@
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
     "bs58": "^4.0.1",
+    "eth-sig-util": "^2.5.3",
     "gsap": "^3.5.1",
     "leaflet": "^1.6.0",
     "leaflet-draw": "^1.0.4",

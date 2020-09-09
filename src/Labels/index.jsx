@@ -3,12 +3,9 @@ import {
   Box, Heading,
   Form, Flex,
   Input, Card,
-  Select,
-  Field,
-  Button,
-  Text,
-  Checkbox,
-  Radio
+  Select, Field,
+  Button, Text,
+  Checkbox, Radio
 } from 'rimble-ui'
 import { v1 as uuidv1, v5 as uuidv5 } from 'uuid'
 import * as base58 from 'bs58'
@@ -16,8 +13,6 @@ import QRCode from 'qrcode'
 import { chunk } from '../utils'
 
 export default () => {
-  const [formValidated, setFormValidated] = useState(false)
-  const [validated, setValidated] = useState(false)
   const [page, setPage] = useState({width: 8.5, height: 11})
   const [label, setLabel] = useState({width: 2 + 5/8, height: 2})
   const [innerGutter, setInnerGutter] = useState({width: 1/8, height: 0})
@@ -30,7 +25,13 @@ export default () => {
       label: { width: 2 + 5/8, height: 2 },
       outerGutter: { width: 7/32, height: 15/32 },
       innerGutter: { width: 1/8, height: 0 },
-    }
+    },
+    'Avery 6874 (6×(3"×3¾"))': {
+      page: { width: 8.5, height: 11 },
+      label: { width: 3 + 3/4, height: 3 },
+      outerGutter: { width: 3/8, height: 5/8 },
+      innerGutter: { width: 1/4, height: 3/8 },
+    },
   }
   const setters = {
     page: setPage, label: setLabel,
@@ -48,7 +49,7 @@ export default () => {
       ids.map((guid) => (
         new Promise((resolve, reject) => {
           QRCode.toString(
-            `https://pkg.dhappy.org/cel/${guid}`,
+            `https://pkg.dhappy.org/#/cel/${guid}`,
             { margin: 0, errorCorrectionLevel: 'low' },
             (err, string) => {
               if(err) throw err
@@ -60,9 +61,9 @@ export default () => {
     )
     const data = ids.map((id, i) => ({ guid: id, qr: qrs[i] }))
     setData(chunk(data, cols))
-  }, [])
+  }, [page, label, outerGutter, innerGutter])
 
-  useEffect(() => { genData() }, [page, label, outerGutter, innerGutter, genData])
+  useEffect(() => { genData() }, [genData])
 
   const setter = (dim, axis) => (
     (evt) => {
@@ -81,7 +82,7 @@ export default () => {
     return base58.encode(buffer)
   }
 
-  const idView = (guid, row, col) => {
+  const idView = (guid) => {
     const rows = chunk(guid, 8)
     return (
       <text style={{textAnchor: 'middle', fontFamily: "'Source Code Pro', monospace", fontSize: 25}} >
@@ -139,7 +140,12 @@ export default () => {
           </fieldset>
         </form>
         <Field label='Presets:'>
-          <select>
+          <select onChange={(evt) => {
+            const preset = presets[evt.target.value]
+            for(let prop of Object.keys(setters)) {
+              setters[prop](preset[prop])
+            }
+          }}>
             {Object.keys(presets).map((opt, i) => <option key={i}>{opt}</option>)}
           </select>
         </Field>
