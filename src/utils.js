@@ -35,3 +35,14 @@ export const distanceBetween = (origin, destination) => {
   const EARTH_RADIUS = 6371000 // meters
   return c * EARTH_RADIUS
 }
+
+export const chunk = (from, size) => {
+  const isStr = typeof(from) === 'string'
+  let arr = Array.from(from)
+  let to = []
+  while(arr.length) {
+    const nxt = arr.splice(0, size)
+    to.push(isStr ? nxt.join('') : nxt)
+  }
+  return to
+}

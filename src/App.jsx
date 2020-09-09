@@ -5,15 +5,18 @@ import { MetaMaskButton, Card, Flex } from 'rimble-ui'
 import Web3 from 'web3'
 import './App.css'
 import Main from './Main'
-import Jobs from './Jobs'
+import PublicJobs from './Jobs/Public'
+import PrivateJobs from './Jobs/Private'
 import Parcels from './Parcels'
 import ViewParcel from './Parcels/View'
-import Ship from './Ship'
+import Contracts from './Contracts'
+import NewContract from './Contracts/New'
 import Join from './Join'
 import Find from './Find'
 import Contacts from './Contacts'
 import NewContact from './Contacts/New'
 import EditContact from './Contacts/Edit'
+import Labels from './Labels'
 
 export default () => {
   const [currentNet, setCurrentNet] = useState()
@@ -69,13 +72,14 @@ export default () => {
         <Route path='/contacts/:address/edit' component={EditContact}/>
         <Route path='/contacts/new' component={NewContact}/>
         <Route path='/contacts' component={Contacts}/>
-        <Route path='/jobs' component={Jobs}/>
+        <Route path='/jobs/public' component={PublicJobs}/>
+        <Route path='/jobs/private' component={PrivateJobs}/>
         <Route path='/cel/:guid' component={ViewParcel}/>
-        <Route path='/view/:guid' component={ViewParcel}/>
         <Route path='/parcels' component={Parcels}/>
-        <Route path='/ship' component={Ship} />
-        <Route path='/contract/join' compoenent={Find} />
+        <Route path='/contracts/new' component={NewContract} />
         <Route path='/contracts/:id/join' component={Join} />
+        <Route path='/contracts' component={Contracts} />
+        <Route path='/labels' component={Labels} />
       </Switch>
     </Router>
   )

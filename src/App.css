@@ -1,6 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@700&display=swap');
+
 .leaflet-container {
-  height: calc(100vh - 2em);
+  height: calc(100vh - 30em);
+  max-height: 100vw;
   width: 90%;
+}
+
+.card {
+  min-height: 100vh;
+  min-width: 40em;
+  max-width: 40em;
   margin: auto;
 }
 
@@ -12,11 +21,16 @@ a {
   text-decoration: none;
 }
 
-.card {
-  min-width: 50vw;
-  margin: 0 25vw;
-}
-
 .avatar {
   max-height: 3em;
+}
+
+@media print {
+  .config {
+    display: none;
+  }
+}
+
+svg {
+  stroke: black;
 }

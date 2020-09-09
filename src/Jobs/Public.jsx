@@ -10,13 +10,13 @@ import Box from '3box'
 //import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import Web3 from 'web3'
-import { distanceBetween } from './utils'
+import { distanceBetween } from '../utils'
 
 const creator = '0xC33290860C1DA6a84195C5cf1575860d3A3ED73d' // to look up zones space
 const zonesSpace = 'courier-zones'
 
 export default () => {
-  const [pos, setPos] = useState({ y: 51.505, x: -0.09 })
+  const [pos, setPos] = useState({ lat: -0.09, lng: 51.505 })
   const [hexs, setHexs] = useState([])
   const [zones, setZones] = useState([])
   const [name, setName] = useState()
@@ -25,7 +25,7 @@ export default () => {
   const web3 = new Web3(Web3.givenProvider)
 
   useEffect(() => {
-    const success = (pos) => setPos({ y: pos.coords.latitude, x: pos.coords.longitude })
+    const success = (pos) => setPos({ lat: pos.coords.latitude, lng: pos.coords.longitude })
     const error = (err) => alert(`Error Getting Current Position: '${err.message}'`)
     navigator.geolocation.getCurrentPosition(success, error)
   }, [])
@@ -108,8 +108,8 @@ export default () => {
     const w = 0.015
     const theta = 2 * Math.PI / 6
     const start = {
-      row: Math.floor(pos.y / (2 * w)),
-      col: Math.floor(pos.x / (2 * w * Math.sin(theta))),
+      row: Math.floor(pos.lng / (2 * w)),
+      col: Math.floor(pos.lat / (2 * w * Math.sin(theta))),
     }
     const rows = 12
     const cols = 35
@@ -124,11 +124,11 @@ export default () => {
         const row = Math.floor(i / rows)
         const p = {
           x: (
-            pos.x + row * 1 * w * Math.sin(theta)
+            pos.lng + row * 1 * w * Math.sin(theta)
             - (full.width / 4 - one.width / 2)
           ),
           y: (
-            pos.y + (i % rows) * 3 * w
+            pos.lat + (i % rows) * 3 * w
             - (3 * full.height / 4 + one.height / 2)
           ),
         }
@@ -143,7 +143,7 @@ export default () => {
           [p.y + w * Math.cos(theta), p.x - w * Math.sin(theta)],
           [p.y - w * Math.cos(theta), p.x - w * Math.sin(theta)],
         ]
-        poly.center = p
+        poly.center = { lat: p.y, lng: p.x }
         poly.index = { row: start.row + row, col: start.col + i % cols }
         poly.id = `(${poly.index.row},${poly.index.col})`
         poly.contracts = []
@@ -155,7 +155,7 @@ export default () => {
     const r = w * 10
     const zones = polys.filter((poly) => (
       poly.every((p) => (
-        Math.sqrt(Math.pow(p[1] - pos.x, 2) + Math.pow(p[0] - pos.y, 2)) <= r
+        Math.sqrt(Math.pow(p[1] - pos.lng, 2) + Math.pow(p[0] - pos.lat, 2)) <= r
       ))
     ))
     setZones(zones)
@@ -176,7 +176,7 @@ export default () => {
         <Card><Heading>{name}</Heading></Card>
       }
       <Heading>#1. Select Your Availability Zone</Heading>
-      <LeafletMap center={[pos.y, pos.x]} zoom={11}>
+      <LeafletMap center={pos} zoom={11}>
         <TileLayer
           url="https://{s}.tile.osm.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -200,7 +200,7 @@ export default () => {
             }}
           />
         </FeatureGroup>
-        <Marker position={[pos.y, pos.x]}>
+        <Marker position={pos}>
           <Popup>You are here.</Popup>
         </Marker>
         {hexs.map((p, i) => (
@@ -235,7 +235,7 @@ export default () => {
             <tr key={zone.id}>
               <td>{zone.id}</td>
               <td>{zone.contracts.length}</td>
-              <td>{distanceBetween(origin, zone.center)}</td>
+              <td>{(distanceBetween(pos, zone.center) / 1000).toFixed(2)}km</td>
             </tr>
           ))}
         </tbody>

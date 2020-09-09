@@ -3,16 +3,28 @@ import {
   Tooltip, Button, Card, Icon,
   Flex, Heading, Field, Input
 } from "rimble-ui"
+import { useHistory } from 'react-router-dom'
 import QRReader from '../QRReader'
 
 export default () => {
   const [scanning, setScanning] = useState(false)
   const [data, setData] = useState()
+  const history = useHistory()
 
   const onScan = (data) => {
     if(data) {
-      setScanning(false)
       setData(data)
+      const match = data.match(/^https?:\/\/(pkg|sw).dhappy.org(\/cel\/([^\/]*)(\/(.+))?$)/)
+      console.info(data, match)
+      if(match) {
+        setScanning(false)
+        setData(match[3])
+        if(match[1] === 'pkg') {
+          history.push(match[2])
+        } else {
+          window.location = match[0]
+        }
+      }
     }
   }
 
@@ -26,13 +38,13 @@ export default () => {
           <Field label="Package ID">
             <Flex alignItems='center' flexDirection='row'>
               <Input type='text' required={true}
-                width='25em'
+                width='20em'
                 placeholder='128 bits base58 encoded'
                 value={data} onChange={evt => setData(evt.target.value)}
               />
               <Tooltip message='Read QR Code'>
                 <Button onClick={() => setScanning(true)}>
-                  <Icon color="tomato" name="Pages" size="80"/>
+                  <Icon name='Pages'/>
                 </Button>
               </Tooltip>
             </Flex>
