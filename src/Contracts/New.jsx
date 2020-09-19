@@ -1,22 +1,21 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import {
   Map as LeafletMap, Marker, Popup, TileLayer,
   Circle, Polyline, SVGOverlay
 } from 'react-leaflet'
 import {
   Text, Card, Flex, Heading, Button, Input, Table, Loader,
-  Radio, Field, Checkbox, Box as LayoutBox, Icon
+  Radio, Checkbox, Icon
 } from 'rimble-ui'
-import { v5 as UUIDv5 } from 'uuid'
-import UUIDEncoder from 'uuid-encoder'
 import { HashLink as Link } from 'react-router-hash-link'
 import gsap from 'gsap'
 import ScrollTrigger from 'gsap/ScrollTrigger'
 import Box from '3box'
 import Web3 from 'web3'
-import { v5 as uuidv5 } from 'uuid'
+import { v1 as uuidv1 } from 'uuid'
 import * as base58 from 'bs58'
-import * as sigUtil from 'eth-sig-util'
+//import * as sigUtil from 'eth-sig-util'
+import IdentityWallet from 'identity-wallet'
 import { commafy, capitalize, distanceBetween, chunk } from '../utils'
 import QRReader from '../QRReader'
 
@@ -29,11 +28,13 @@ export default (props) => {
   const [time, setTime] = useState(0)
   const [contacts, setContacts] = useState()
   const [bond, setBond] = useState(0)
+  const [did, setDID] = useState()
   const [couriers, setCouriers] = useState([])
   const [scanner, setScanner] = useState(false) // show QR code scanner
   const web3 = new Web3(Web3.givenProvider)
-  const buffer = new Array()
-  const uuid = uuidv5('https://pkg.dhappy.org', uuidv5.URL, buffer)
+  
+  const buffer = []
+  uuidv1({}, buffer)
   let b58 = base58.encode(buffer)
   const [guid, setGUID] = useState(chunk(b58, 6).join('–'))
 
@@ -73,10 +74,17 @@ export default (props) => {
   }, [])
 
   const loadContacts = useCallback(async () => {
-    const user = (
-      await window.ethereum.request({ method: 'eth_requestAccounts' })
-    )[0]
+    let provider = Web3.givenProvider
+    if(!provider) {
+      provider = window.web3 && window.web3.currentProvider
+    }
+    if(!provider) {
+      throw new Error("Couldn't Find an Ethereum Provider.\n\nCan't connect to databases.")
+    }
+    const web3 = new Web3(provider)
+    const user = (await web3.eth.getAccounts())[0]
     const box = await Box.openBox(user, Web3.givenProvider)
+    setDID(await (await box.openSpace('courier')).DID)
     const contacts = await box.openSpace('courier-contacts')
     await contacts.syncDone
     setContacts(await contacts.private.all())
@@ -87,7 +95,7 @@ export default (props) => {
   useEffect(() => {
     navigator.permissions.query({name: 'geolocation'})
     .then((result) => {
-      if(result.state === 'granted' || result.state == 'prompt') {
+      if(result.state === 'granted' || result.state === 'prompt') {
         const success = (pos) => {
           const actual = { lat: pos.coords.latitude, lng: pos.coords.longitude }
           setPos(actual)
@@ -95,7 +103,7 @@ export default (props) => {
         }
         const error = (err) => alert(`Error Getting Current Position: '${err.message}'`)
         navigator.geolocation.getCurrentPosition(success, error)
-      } else if(result.state == 'denied') {
+      } else if(result.state === 'denied') {
         alert("Couldn't Access GPS")
       } else {
         alert(`Unknown GPS Code: ${result.state}`)
@@ -144,15 +152,15 @@ export default (props) => {
   ]
 
   const navbuttons = ({ idx, onBack, onNext, nextAvail = true }) => (
-    <Flex mt={25} mb={200} justifyContent='flex-end' alignItems='center' flexDirection='row'>
+    <Flex mt={25} mb={10} justifyContent='flex-end' alignItems='center' flexDirection='row'>
       {[...new Array(pageIcons.length)].map((_, i) =>
-        <Link to={`#${i + 1}`}>
+        <Link key={i} to={`#${i + 1}`}>
           {i + 1 !== idx
             ? <Button.Outline size='small' icon={pageIcons[i % pageIcons.length]}
-                title={pageDescs[i % pageDescs.length]} px={0} mx={0} mt={4}
+                title={pageDescs[i % pageDescs.length]} px={0} mx={0} mt={0}
               />
             : <Button size='small' icon={pageIcons[i % pageIcons.length]}
-                title={pageDescs[i % pageDescs.length]} px={0} mx={1} mt={4}
+                title={pageDescs[i % pageDescs.length]} px={0} mx={1} mt={0}
               />
           }
         </Link>
@@ -192,12 +200,12 @@ export default (props) => {
         name: 'Courier',
         version: '0.2.4',
         chainId: await web3.eth.net.getId(), // 4, // Rinkeby
-        salt: '0x' + Buffer.from(salt).toString('hex'),
+        salt: 'https://pkg.dhappy.org', //'0x' + Buffer.from(salt).toString('hex'),
       },
       contract: tract,
     }
 
-    const payload = JSON.stringify({
+    const payload = {
       types: {
           EIP712Domain: Domain,
           Contract,
@@ -206,21 +214,28 @@ export default (props) => {
       domain: data.domain,
       primaryType: 'Contract',
       message: data.contract,
-    })
-    console.info(payload)
+    }
 
     const user = (
       await window.ethereum.request({ method: 'eth_requestAccounts' })
     )[0]
     const sig = await window.ethereum.request({
       method: 'eth_signTypedData_v4',
-      params: [user, payload],
+      params: [user, JSON.stringify(payload)],
       from: user
     })
+    payload.signatures = [sig]
     // const signer = await sigUtil.recoverTypedSignature_v4(
-    //   { data: JSON.parse(payload), sig }
+    //   { data: payload, sig }
     // )
-    return sig
+    return payload
+  }
+
+  const postToInbox = async (recipient, obj) => {
+    const box = await Box.openBox(recipient, Web3.givenProvider)
+    const app = await box.openSpace('courier')
+    const inbox = await app.joinThread('inbox')
+    await inbox.post(obj)
   }
 
   return (
@@ -239,6 +254,7 @@ export default (props) => {
         </Flex>
       </Card>
       <Card id='2' className='card map'>
+        {navbuttons({ idx: 2 })}
         <Flex alignItems='center' flexDirection='column'>
           <Heading>Where are you?</Heading>
           <Text indent='1.5em' fontSize={22}>Your location is anonymized by specifying your distance from a waypoint in terms of travel time.</Text>
@@ -289,32 +305,32 @@ export default (props) => {
             <Input
               width='4em'
               type='number'
-              value={Math.ceil(time || 0).toFixed(0)}
+              value={Math.ceil(time || 0)}
               onChange={(evt) => {
                 const when = (
-                  evt.target.value !== '' ? parseFloat(evt.target.value) : time[type]
+                  evt.target.value !== '' ? parseFloat(evt.target.value) : time
                 )
-                setTime(time => ({...time, [type]: when}))
+                setTime(when)
               }}
             />
-            <Text>minute{time === '1' ? '' : 's'}</Text>
+            <Text>minute{time === 1 ? '' : 's'}</Text>
           </Flex>
         </Flex>
-        {navbuttons({ idx: 2 })}
       </Card>
       <Card id='3' className='card'>
+        {navbuttons({ idx: 3 })}
         <Flex alignItems='center' flexDirection='column'>
           <Heading>What is the package id?</Heading>
           <Text fontSize={22}>Every parcel in the network has a unique identifier that should be <Link to='/labels'>scannable as a QR code</Link> or NFC tag. Barring that, the id should be written on the package.</Text>
           <Flex alignItems='center' flexDirection='row'>
-            <Input width='35ch' value={guid} textAlign='center' />
+            <Input width='35ch' value={guid} textAlign='center' onChange={evt => setGUID(evt.target.value)} />
             <Button icon='Pages' title='Scan QR Code' onClick={() => setScanner(true)}/>
           </Flex>
           {scanner &&
             <Card>
               <QRReader onScan={(data) => {
                 if(data) {
-                  const match = data.match(/^(https?:)?\/\/pkg.dhappy.org\/(#\/)?cel\/([^\/]+)/i)
+                  const match = data.match(/^(https?:)?\/\/pkg.dhappy.org\/(#\/)?cel\/([^/]+)/i)
                   if(match) {
                     setGUID(match[3])
                     setScanner(false)
@@ -324,9 +340,9 @@ export default (props) => {
             </Card>
           }
         </Flex>
-        {navbuttons({ idx: 3 })}
       </Card>
       <Card id='4' className='card'>
+        {navbuttons({ idx: 4 })}
         <Flex alignItems='center' flexDirection='column'>
           <Heading>Who are you {type === 'pick-up' ? 'sending it to' : 'getting it from'}?</Heading>
           {!contacts
@@ -340,11 +356,15 @@ export default (props) => {
                 <tbody>
                   {Object.entries(contacts).map(([addr, contact]) => (
                     <tr key={addr} style={{ cursor: 'pointer' }}>
-                      <td><Radio checked={other === contact} onClick={(evt) => {
-                        // Is getting called twice
-                        console.info(evt.target.checked)
-                        setOther(evt.target.checked ? undefined : contact)
-                      }}/></td>
+                      <td><Radio checked={other === contact}
+                        onChange={(evt) => {
+                          // Is getting called twice
+                          setOther((other) => {
+                            console.info(other, contact, other === contact)
+                            return other !== contact ? contact : null
+                          })
+                        }}
+                      /></td>
                       <td onClick={() => setOther(contact)}>{commafy(contact.names)}</td>
                     </tr>
                   ))}
@@ -353,9 +373,9 @@ export default (props) => {
             )
           }
         </Flex>
-        {navbuttons({ idx: 4 })}
       </Card>
       <Card id='5' className='card'>
+        {navbuttons({ idx: 5 })}
         <Flex alignItems='center' flexDirection='column'>
           <Heading>What bond do you want on the delivery?</Heading>
           <Text indent='1.5em' fontSize={22}>Couriers stake a bond as insurance for their good faith. If your courier fails to check in at a waypoint or receive a delivery receipt, this is the what you get to cover your loss.</Text>
@@ -372,12 +392,12 @@ export default (props) => {
                 setBond(bond)
               }}
             />
-            <Text><Icon name='Dai'/> DAI</Text>
+            <Text ml={2}><Icon name='Dai'/> DAI</Text>
           </Flex>
         </Flex>
-        {navbuttons({ idx: 5 })}
       </Card>
       <Card id='6' className='card'>
+        {navbuttons({ idx: 6 })}
         <Flex alignItems='center' flexDirection='column'>
           <Heading>Choose Couriers</Heading>
           <Text indent='1.5em' fontSize='15pt'>These couriers will be notified of your contract and given an opportunity to bid.</Text>
@@ -393,13 +413,14 @@ export default (props) => {
                   {Object.entries(contacts).map(([addr, contact]) => (
                     <tr key={addr}>
                       <td><Checkbox checked={couriers.includes(contact)}
-                      onClick={(evt) => {
-                        if(evt.target.checked) {
-                          setCouriers(cs => [...new Set([...cs, contact])])
-                        } else {
-                          setCouriers(cs => cs.filter(c => c !== contact))
-                        }
-                      }}/></td>
+                        onChange={(evt) => {
+                          if(evt.target.checked) {
+                            setCouriers(cs => [...new Set([...cs, contact])])
+                          } else {
+                            setCouriers(cs => cs.filter(c => c !== contact))
+                          }
+                        }}
+                      /></td>
                       <td onClick={(evt) => {
                         setCouriers(cs => {
                           if(cs.includes(contact)) {
@@ -416,52 +437,67 @@ export default (props) => {
             )
           }
         </Flex>
-        {navbuttons({ idx: 6 })}
       </Card>
       <Card id='7' className='card'>
-        <Flex alignItems='center' flexDirection='column'>
-          <Heading>Get {type === 'pick-up' ? 'Recipient' : 'Sender'} Information</Heading>
-          {other
-            ? <Text fontSize={22}>The contract will now be sent to {other.names[0]} for their location information. {couriers.length > 0 && 'Links to the bidding database will be sent to the following couriers for bids:'}</Text>
-            : <Text fontSize={22}>You have not <Link to='#4'>selected the other party</Link>.</Text>
-          }
-        </Flex>
-        <Flex alignItems='start' flexDirection='column'>
-          <ul>
-            {couriers.map((c, i) => <li key={i}>{commafy(c.names)}</li>)}
-          </ul>
-        </Flex>
         {navbuttons({ idx: 7, nextAvail: type !== undefined,
           onNext: async (evt) => {
-            const user = (
-              await window.ethereum.request({ method: 'eth_requestAccounts' })
-            )[0]
-            const box = await Box.openBox(user, Web3.givenProvider)
-            const parcels = await box.openSpace('courier-parcels')
+            let provider = Web3.givenProvider
+            if(!provider) {
+              provider = window.web3 && window.web3.currentProvider
+            }
+            if(!provider) {
+              throw new Error("Couldn't Find an Ethereum Provider.\n\nCan't connect to databases.")
+            }
+            const web3 = new Web3(provider)
+            const user = (await web3.eth.getAccounts())[0]
+                  const box = await Box.openBox(user, Web3.givenProvider)
+            const parcels = await box.openSpace('courier')
             await parcels.waitSync
             const guidBytes = base58.decode(guid.replace(/-/g, ''))
             const digest = await crypto.subtle.digest('SHA-256', guidBytes)
             const hash = base58.encode(Buffer.from(digest))
             const threadName = `bids-${hash}`
             const thread = await parcels.createConfidentialThread(threadName)
-            //thread.addMember()
-            console.info(other)
-
             const contract = {
-              bond: `${(bond || 0) * Math.pow(10, 18)}`,
+              bond: (bond || 0) * Math.pow(10, 18),
               [type]: {
+                contact: did,
                 lat: Math.round(mark.lat * Math.pow(10, 6)),
                 lng: Math.round(mark.lng * Math.pow(10, 6)),
                 travelTime: Math.round(time * 60),
               },
             }
-            contract.sig = [await signContract(contract)]
-
-            console.info(contract)
-
+            console.info('TCT', contract)
+            await thread.post({ contract })
+            await thread.addMember(other.address)
+            const creator = user
+            await postToInbox(other.address, { awaiting: thread.address, creator })
+            for(let courier of couriers) {
+              await thread.addMember(courier.address)
+              await postToInbox(courier.address, { contract: thread.address, creator })
+              console.info(courier)
+            }
             const posts = await thread.getPosts()
+            console.info(posts)
           }
         })}
+        <Flex alignItems='center' flexDirection='column'>
+          <Heading>Get {type === 'pick-up' ? 'Recipient' : 'Sender'} Information</Heading>
+          {!type
+            ? <Text fontSize={22}>You need to specify <Link to='#1'>whether you are sending or receiving</Link>.</Text>
+            : (!other
+              ? <Text fontSize={22}>You have not <Link to='#4'>selected the other party</Link>.</Text>
+              : <Text fontSize={22}>The contract will now be sent to {other.names[0]} for their location information. {couriers.length > 0 && 'Links to the bidding database will be sent to the following couriers for bids:'}</Text>
+            )
+          }
+        </Flex>
+        {type && other &&
+          <Flex alignItems='start' flexDirection='column'>
+            <ul>
+              {couriers.map((c, i) => <li key={i}>{commafy(c.names)}</li>)}
+            </ul>
+          </Flex>
+        }
       </Card>
     </Flex>
   )

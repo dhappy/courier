@@ -21,10 +21,21 @@ export default () => {
   const toast = useRef(null)
 
   const load3Box = async () => {
-    const user = (
-      await window.ethereum.request({ method: 'eth_requestAccounts' })
-    )[0]
-    setBox(await Box.openBox(user, Web3.givenProvider))
+    try {
+      let provider = Web3.givenProvider
+      if(!provider) {
+        provider = window.web3 && window.web3.currentProvider
+      }
+      if(!provider) {
+        throw new Error("Couldn't Find an Ethereum Provider.\n\nCan't connect to databases.")
+      }
+      const web3 = new Web3(provider)
+      const user = (await web3.eth.getAccounts())[0]
+      setAddr(user)
+      setBox(await Box.openBox(user, web3.currentProvider))
+    } catch(err) {
+      alert(err.message)
+    }
   }
 
   useEffect(() => { load3Box() }, [])
@@ -92,29 +103,23 @@ export default () => {
   }
 
   const keylink = () => {
-    if(!pubkey) {
-      return <>
-        <Input placeholder='What do they call you?'
-          value={name} onChange={evt => setName(evt.target.value)}
-          onKeyDown={evt => { if(evt.key.toLowerCase() === 'enter') getPubKey() }}
-        />
-        <Button onClick={getPubKey}>Generate</Button>
-      </>
-    } else {
-      const path = `/contacts/new?key=${pubkey}&alias=${encodeURI(name)}&address=${addr}`
-      const absolute = `https://pkg.dhappy.org/#${path}`
-      return (
-        <>
-          <Text>To invite contacts, send them this:</Text>
-          <Flex alignItems='center' justifyContent='center' flexDirection='row'>
-            <Link to={path} ref={url}>{absolute}</Link>
-            <Button onClick={copyKey} title='Copy to Clipboard' mx={2} size='small'>
-              <Icon name='Assignment'/>
-            </Button>
-          </Flex>
-        </>
-      )
-    }
+    const path = `/ppl/new?alias=${encodeURI(name)}&address=${addr}`
+    const absolute = `https://pkg.dhappy.org/#${path}`
+
+    return <>
+      <Input placeholder='What do they call you?'
+        value={name} onChange={evt => setName(evt.target.value)}
+      />
+      {name && <>
+        <Text>To invite contacts, send them this:</Text>
+        <Flex alignItems='center' justifyContent='center' flexDirection='row'>
+          <Link to={path} ref={url} style={{overflow: 'hidden', textOverflow: 'ellipsis' }}>{absolute}</Link>
+          <Button onClick={copyKey} title='Copy to Clipboard' mx={2} size='small'>
+            <Icon name='Assignment'/>
+          </Button>
+        </Flex>
+      </>}
+    </>
   }
 
   return (

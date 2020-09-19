@@ -14,7 +14,7 @@ export default () => {
   const onScan = (data) => {
     if(data) {
       setData(data)
-      const match = data.match(/^https?:\/\/(pkg|sw).dhappy.org(\/cel\/([^\/]*)(\/(.+))?$)/)
+      const match = data.match(/^https?:\/\/(pkg|sw).dhappy.org(\/cel\/([^/]*)(\/(.+))?$)/)
       console.info(data, match)
       if(match) {
         setScanning(false)

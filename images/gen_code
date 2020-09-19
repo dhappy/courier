@@ -3,9 +3,9 @@
 export ISOTIME=$(date +%Y-%m-%d@%H:%M:%S%:z)
 export GUID=$(uuid -F BIN | base58)
 # Uncovered package seal
-echo -n "https://pkg.dhappy.org/cel/$GUID" | qrencode -t SVG -l M > "(pkg.view).$ISOTIME.$GUID.mid.svg"
-echo -n "https://pkg.dhappy.org/cel/$GUID" | qrencode -t SVG -l L > "(pkg.view).$ISOTIME.$GUID.low.svg"
+echo -n "https://pkg.dhappy.org/#/cel/$GUID" | qrencode -t SVG -l M > "(pkg.view).$ISOTIME.$GUID.mid.svg"
+echo -n "https://pkg.dhappy.org/#/cel/$GUID" | qrencode -t SVG -l L > "(pkg.view).$ISOTIME.$GUID.low.svg"
 
 export GUID=$(uuid -F BIN | base58)
-# Covered package review / ygg invites
-echo -n "https://ygg.dhappy.org/ins/$GUID" | qrencode -t SVG -l L > "(ygg.ins).$ISOTIME.$GUID.low.svg"
+# Ygg invites
+echo -n "https://ppl.dhappy.org/#/mt/$GUID" | qrencode -t SVG -l L > "(ppl.meet).$ISOTIME.$GUID.low.svg"

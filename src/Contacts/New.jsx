@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { Heading, Button, Input, Card, Loader } from 'rimble-ui'
+import { Heading, Button, Input, Card, Loader, Flex } from 'rimble-ui'
 import { HashLink as Link } from 'react-router-hash-link'
 import { useLocation, Redirect } from 'react-router-dom'
 import Box from '3box'
@@ -11,7 +11,7 @@ export default () => {
   const query = useQuery()
   const [names, setNames] = useState([query.get('alias')])
   const [addr] = useState(query.get('address'))
-  const [key] = useState(query.get('key'))
+  const [did, setDID] = useState()
   const [contacts, setContacts] = useState()
   const [box, setBox] = useState()
   const [boxProfile, setBoxProfile] = useState(
@@ -19,31 +19,50 @@ export default () => {
   )
   const [saveText, setSaveText] = useState('Save')
 
+  let provider = Web3.givenProvider
+  if(!provider) {
+    provider = window.web3 && window.web3.currentProvider
+  }
+  const web3 = new Web3(provider)
+
   const load3Box = useCallback(async () => {
-    const user = (
-      await window.ethereum.request({ method: 'eth_requestAccounts' })
-    )[0]
-    setBox(await Box.openBox(user, Web3.givenProvider))
+    try {
+      const user = (await web3.eth.getAccounts())[0]
+      const box = await Box.openBox(user, web3.currentProvider)
+      setBox(box)
+    } catch(err) {
+      alert(err.message)
+    }
   }, [])
 
   useEffect(() => { load3Box() }, [load3Box])
 
   const updateBoxProfile = useCallback(async () => {
-    setBoxProfile(<Loader color='orange' display='inline' title='Getting 3Box Profile…'/>)
-    const profile = await Box.getProfile(addr)
-    setBoxProfile(
-      (!profile || Object.keys(profile).length === 0)
-      ? <i>Empty</i>
-      : (
-        <ul>
-          {Object.entries(profile)
-          .filter(([key, val]) => !key.startsWith('proof_') && typeof(val) !== 'object')
-          .map(([key, val]) => (
-            <li key={key}><b>{key}:</b> {val}</li>
-          ))}
-        </ul>
+    try {
+      setBoxProfile(<Loader color='orange' display='inline' title='Getting 3Box Profile…'/>)
+      const profile = await Box.getProfile(addr)
+      const entries = Object.entries(profile || {}).filter(
+        ([key, val]) => !key.startsWith('proof_') && typeof(val) !== 'object'
       )
-    )
+      setBoxProfile(
+        (entries.length === 0)
+        ? <ul><li><i>Empty</i></li></ul>
+        : (
+          <ul>
+            {entries
+              .map(([key, val]) => (
+                <li key={key}><b>{key}:</b> {JSON.stringify(val)}</li>
+              ))
+            }
+          </ul>
+        )
+      )
+      console.info(provider, web3.currentProvider)
+      console.info('DID', (await Box.openBox(addr, web3.currentProvider)).DID)
+      setDID((await Box.openBox(addr, web3.currentProvider)).DID)
+    } catch(err) {
+      alert(err.message)
+    }
   }, [addr])
 
   useEffect(() => { updateBoxProfile() }, [updateBoxProfile])
@@ -61,25 +80,34 @@ export default () => {
         ))])
       }
     }
-  }, [])
+  }, [box])
 
-  useEffect(() => { loadContacts() }, [loadContacts, box])
+  useEffect(() => { loadContacts() }, [loadContacts])
 
   const saveContact = async () => {
     if(!contacts) {
       console.error("Contact space isn't set")
     } else {
       setSaveText(<Loader color='white'/>)
-      await contacts.private.set(addr, {
-        key: key,
+      const entry = {
+        did, address: addr,
         names: [...new Set(names.filter(n => n.trim() !== ''))],
-      })
+      }
+      await contacts.private.set(addr, entry)
+      await contacts.private.set(did, entry)
+      setSaveText(<Loader color='green'/>)
+
+      // Before a thread can be opened, the space it belongs to
+      // has to have been opened by the specific user
+      const other = await Box.openBox(addr, Web3.givenProvider)
+      const parcels = await box.openSpace('courier-parcels')
+      await parcels.syncDone
       setSaveText('Done')
     }
   }
 
   return (
-    <Card width='50%' margin='auto'>
+    <Flex flexDirection='column'><Card>
       <Heading>Create a New Contact</Heading>
       
       <ul>
@@ -118,21 +146,30 @@ export default () => {
             ))}
           </ul>
         </li>
-        <li><b>Public Key:</b> {key}</li>
+        <li><Flex flexDirection='row'>
+          <b style={{marginRight: '0.5em'}}>Decentralized ID:</b> {did ? did : <Loader/>}
+        </Flex></li>
         <li><b>ETH Address:</b> {addr}</li>
-        <li><b>3Box Profile:</b> {boxProfile}</li>
+        <li>
+          <Flex flexDirection='row'>
+            <b>3Box Profile:</b> {!boxProfile && <Loader/>}
+          </Flex>
+          {boxProfile}
+        </li>
       </ul>
 
-      <Link to='/contacts' style={{marginLeft: '50%'}}>
-        <Button.Outline mx={2}>Cancel</Button.Outline>
-      </Link>
-      <Button onClick={saveContact} variant='success  '
-        disabled={
-          names.filter(n => n !== '').length === 0
-          || saveText !== 'Save'
-        }
-      >{saveText}</Button>
-      {saveText === 'Done' && <Redirect to='/contacts'/>}
-    </Card>
+      <Flex justifyContent='flex-end'>
+        <Link to='/contacts'>
+          <Button.Outline mx={2}>Cancel</Button.Outline>
+        </Link>
+        <Button onClick={saveContact} variant='success  '
+          disabled={
+            names.filter(n => n !== '').length === 0
+            || saveText !== 'Save'
+          }
+        >{saveText}</Button>
+        {saveText === 'Done' && <Redirect to='/contacts'/>}
+      </Flex>
+    </Card></Flex>
   )
 }

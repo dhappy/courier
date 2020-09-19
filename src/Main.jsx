@@ -9,7 +9,7 @@ export default () => {
       <Card maxWidth='25em' mx='auto' marginTop='1.5em' px={[3, 3, 4]}>
         <Flex alignItems='center'  flexDirection='column'>
           <Heading>Anyone</Heading>
-          <Link to='/contacts'>
+          <Link to='/ppl'>
             <Button mx='auto' my='0.5em'>Manage Contacts</Button>
           </Link>
           <Link to='/labels'>

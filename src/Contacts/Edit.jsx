@@ -8,7 +8,6 @@ import Web3 from 'web3'
 export default (props) => {
   const [names, setNames] = useState()
   const [addr] = useState(props.match.params.address)
-  const [key, setKey] = useState()
   const [contacts, setContacts] = useState()
   const [box, setBox] = useState()
   const [imageCID, setImageCID] = useState()
@@ -58,7 +57,7 @@ export default (props) => {
 
   useEffect(() => { updateBoxProfile() }, [updateBoxProfile])
 
-  const loadContacts = async () => {
+  const loadContacts = useCallback(async () => {
     if(box) {
       const contacts = await box.openSpace('courier-contacts')
       await contacts.syncDone
@@ -69,23 +68,22 @@ export default (props) => {
         setNames(names => [...(new Set(
           [...(names || []), ...existing.names]
         ))])
-        setKey(existing.key)
       } else {
         alert(`Contact ${addr} Not Found`)
       }
     }
-  }
+  }, [box])
 
-  useEffect(() => { loadContacts() }, [box])
+  useEffect(() => { loadContacts() }, [loadContacts])
 
-  const saveContact = async () => {
+  const saveContact = useCallback(async () => {
     setSaveText(<Loader color='white'/>)
     await contacts.private.set(addr, {
-      key: key,
+      address: addr,
       names: [...new Set(names.filter(n => n.trim() !== ''))],
     })
     setSaveText('Done')
-  }
+  }, [contacts])
 
   return (
     <Card width='50%' margin='auto'>
@@ -135,7 +133,6 @@ export default (props) => {
             </ul>
           }
         </li>
-        <li><b>Public Key:</b> {key}</li>
         <li><b>ETH Address:</b> {addr}</li>
         <li>
           <Flex flexDirection='row'>
@@ -146,7 +143,7 @@ export default (props) => {
       </ul>
 
       <Flex justifyContent='flex-end'>
-        <Link to='/contacts' style={{marginLeft: '50%'}}>
+        <Link to='/contacts'>
           <Button.Outline mx={2}>Cancel</Button.Outline>
         </Link>
         <Button onClick={saveContact} variant='success  '

@@ -1,13 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  Box, Heading,
-  Form, Flex,
-  Input, Card,
-  Select, Field,
-  Button, Text,
-  Checkbox, Radio
+  Flex, Card, Field,
 } from 'rimble-ui'
-import { v1 as uuidv1, v5 as uuidv5 } from 'uuid'
+import { v1 as uuidv1 } from 'uuid'
 import * as base58 from 'bs58'
 import QRCode from 'qrcode'
 import { chunk } from '../utils'

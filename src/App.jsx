@@ -17,6 +17,7 @@ import Contacts from './Contacts'
 import NewContact from './Contacts/New'
 import EditContact from './Contacts/Edit'
 import Labels from './Labels'
+import Test3Box from './Test3Box'
 
 export default () => {
   const [currentNet, setCurrentNet] = useState()
@@ -69,9 +70,9 @@ export default () => {
       </ConnectionBanner>
       <Switch>
         <Route path='/' exact component={Main}/>
-        <Route path='/contacts/:address/edit' component={EditContact}/>
-        <Route path='/contacts/new' component={NewContact}/>
-        <Route path='/contacts' component={Contacts}/>
+        <Route path='/ppl/:address/edit' component={EditContact}/>
+        <Route path='/ppl/new' component={NewContact}/>
+        <Route path='/ppl' component={Contacts}/>
         <Route path='/jobs/public' component={PublicJobs}/>
         <Route path='/jobs/private' component={PrivateJobs}/>
         <Route path='/cel/:guid' component={ViewParcel}/>
