@@ -8,4 +8,4 @@ echo -n "https://pkg.dhappy.org/#/cel/$GUID" | qrencode -t SVG -l L > "(pkg.view
 
 export GUID=$(uuid -F BIN | base58)
 # Ygg invites
-echo -n "https://ppl.dhappy.org/#/mt/$GUID" | qrencode -t SVG -l L > "(ppl.meet).$ISOTIME.$GUID.low.svg"
+echo -n "https://ppl.dhappy.org/#/tch/$GUID" | qrencode -t SVG -l L > "(ppl.touch).$ISOTIME.$GUID.low.svg"

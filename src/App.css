@@ -25,6 +25,10 @@ a {
   max-height: 3em;
 }
 
+h1 {
+  text-align: center;
+}
+
 @media print {
   .config {
     display: none;
