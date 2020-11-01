@@ -5,7 +5,7 @@ import './App.css'
 
 export default () => {
   return <>
-    <Box maxWidth='25em' mx='auto' marginTop='1.5em' px={[3, 3, 4]}>
+    <Box maxWidth='45em' mx='auto' marginTop='1.5em' px={[3, 3, 4]}>
       <h1>The <acronym title='Department of Happiness'>DoH</acronym>'s Ad Hoc Courier Service</h1>
       <p>To leave out this software's true purpose is controversial and potentially legally inadvisable, but omitting it hampers development. I want to sell drugs.</p>
       <p>I want people to get reliable quantities of substances backed by videos of reagent tests being done on the shipments.</p>
@@ -23,6 +23,7 @@ export default () => {
         <li>The plug and preorders agree on a bid.</li>
         <li>The courier starts toward the first waypoint gets a private chat with the plug.</li>
         <li>The plug and courier meet in a cloud-backed recording.</li>
+        <li>The courier uses a contact card to identify themselves.</li>
         <li>The plug either sells the remaining packets and their data to a courier or the courier can remain blind.</li>
         <li>The courier notifies the presales that their orders are ready for delivery.</li>
         <li>The preorders specify a waypoint and time distance to a rendez-vous.</li>
