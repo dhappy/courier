@@ -12,7 +12,7 @@ import ViewParcel from './Parcels/View'
 import Contracts from './Contracts'
 import NewContract from './Contracts/New'
 import Join from './Join'
-import Find from './Find'
+import Overview from './Overview'
 import Contacts from './Contacts'
 import NewContact from './Contacts/New'
 import EditContact from './Contacts/Edit'
@@ -70,6 +70,7 @@ export default () => {
       </ConnectionBanner>
       <Switch>
         <Route path='/' exact component={Main}/>
+        <Route path='/overview' component={Overview}/>
         <Route path='/ppl/:address/edit' component={EditContact}/>
         <Route path='/ppl/new' component={NewContact}/>
         <Route path='/ppl' component={Contacts}/>
