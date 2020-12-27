@@ -17,6 +17,7 @@
     "identity-wallet": "^1.4.1",
     "leaflet": "^1.6.0",
     "leaflet-draw": "^1.0.4",
+    "madge": "^3.11.0",
     "qrcode": "^1.4.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
@@ -36,9 +37,10 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build --max_old_space_size=4096",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "madge": "madge  --image ./madge-graph.svg --extensions js,jsx,ts,tsx --circular ."
   },
   "eslintConfig": {
     "extends": "react-app"

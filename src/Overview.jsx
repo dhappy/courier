@@ -26,9 +26,11 @@ export default () => {
     Drop: <p>A courier picks up the bundle.</p>,
     Rideshare: <>
       <p>Customers select their pick-up and destination areas.</p>
-      <p><i>Each packaging is recorded for inclusion in the inventory.</i></p>
     </>,
-    Shopping: <p>On an in-car tablet, they communicate with a plug as to inventory.</p>,
+    Shopping: <>
+      <p>On an in-car tablet, they communicate with a plug as to inventory.</p>
+      <p><i>The shop includes the testing and packaging recordings for each parcel.</i></p>
+    </>,
     Payment: <p>Payment for a parcel is transmitted via IOTA.</p>,
     Fulfillment: <p>The courier gives the customer their purchase.</p>,
   }
@@ -61,7 +63,7 @@ export default () => {
             case 0: marginTop = '30%'; break
             case 1: marginTop = '15%'; break
             case 2: marginTop = '25em'; break
-            case 3: marginTop = '70%'; break
+            case 3: marginTop = '65%'; break
             default: marginTop = `${row * 25}em`
           }
 

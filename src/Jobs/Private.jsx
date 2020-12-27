@@ -44,7 +44,7 @@ export default () => {
 
       // const getConsent = async ({ type, origin, spaces }) => {
       //   // For testing purposes a function that just returns
-      //   // true can be used. In prodicution systems the user
+      //   // true can be used. In production systems the user
       //   // should be prompted for input.
       //   return true
       // }
