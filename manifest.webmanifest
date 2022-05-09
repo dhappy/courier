@@ -1,0 +1,33 @@
+{
+  "short_name": "Courier",
+  "name": "Ad Hoc Courier Coordination",
+  "description": "Allows dynamic package delivery",
+  "icons": [
+    {
+      "purpose": "any maskable",
+      "src": "envelope.svg",
+      "sizes": "512x512 192x192 64x64 32x32 24x24 16x16",
+      "type": "image/xml+svg"
+    },
+    {
+      "src": "envelope-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "envelope-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "intent_filters": {
+    "scope_url_scheme": "https",
+    "scope_url_host": "pkg.dhappy.org",
+    "scope_url_path": "/"
+  },
+  "scope_url": "/",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#cf720e",
+  "background_color": "#fff5eb"
+}
