@@ -16,6 +16,7 @@
     "global": "^4.4.0",
     "gsap": "^3.5.1",
     "identity-wallet": "^1.4.1",
+    "ipfs-http-client": "^56.0.3",
     "leaflet": "^1.6.0",
     "leaflet-draw": "^1.0.4",
     "madge": "^3.11.0",
