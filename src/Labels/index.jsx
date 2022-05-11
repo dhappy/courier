@@ -88,6 +88,12 @@ export default () => {
     )
   }
 
+  const image = () => {
+    return (
+      <image xlinkHref="envelope.svg" x="3%" y="-1.25%" height="6rem"/>
+    )
+  }
+
   const lbl = (datum, row, col) => {
     const x = (outerGutter.width + col * (label.width + innerGutter.width)) * dpi
     const y = (outerGutter.height + row * (label.height + innerGutter.height)) * dpi
@@ -95,7 +101,8 @@ export default () => {
     const qrSize = Math.min(label.width, label.height) * 0.8 * dpi
     return (
       <g key={datum.guid} transform={`translate(${x}, ${y}) rotate(-90) translate(${-initY}, 0)`}>
-        {idView(datum.guid)}
+        {/* {idView(datum.guid)} */}
+        {image()}
         <image
           width={qrSize} height={qrSize}
           x={qrSize * 0.22 / 2} y={label.width * dpi - qrSize - qrSize * 0.05}
