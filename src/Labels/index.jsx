@@ -1,11 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  Flex, Card, Field,
+  Button, Flex, Card, Field,
 } from 'rimble-ui'
 import { v1 as uuidv1 } from 'uuid'
 import * as base58 from 'bs58'
 import QRCode from 'qrcode'
 import { chunk } from '../utils'
+import { create } from 'ipfs-http-client';
+
+const links = async (path) => {
+  // const url = 'https://dweb.link/api/v0'
+  const url = 'http://localhost:5001/api/v0'
+  
+  const ipfs = create({ url })
+  const links = []
+  for await (const link of ipfs.ls(path)) {
+    links.push(link)
+  }
+  return links
+}
 
 export default () => {
   const [page, setPage] = useState({width: 8.5, height: 11})
@@ -13,6 +26,8 @@ export default () => {
   const [innerGutter, setInnerGutter] = useState({width: 1/8, height: 0})
   const [outerGutter, setOuterGutter] = useState({width: 7/32, height: 15/32})
   const [data, setData] = useState([])
+  const [images, setImages] = useState([])
+
   const dpi = 96 // inkscape default
   const presets = {
     'Avery 6793 (15×(2"×2⅝"))': {
@@ -33,6 +48,12 @@ export default () => {
     innerGutter: setInnerGutter, outerGutter: setOuterGutter,
   }
 
+  useEffect(() => {
+    const load = async () => {
+      setImages(await links('QmT8fxdiii2hagjjTNf5xRwneW5KNopCNQaegLwuyVYZgu'))      
+    }
+    load()       
+  }, [])
   const genData = useCallback(async () => {
     const rows = Math.round((page.height - outerGutter.height * 2 + innerGutter.height) / (label.height + innerGutter.height))
     const cols = Math.round((page.width - outerGutter.width * 2 + innerGutter.width) / (label.width + innerGutter.width))
@@ -88,6 +109,16 @@ export default () => {
     )
   }
 
+  const image = () => {
+    if(images.length > 0) {
+      const selected = images[Math.floor(images.length * Math.random())]
+      return (
+        // <image xlinkHref={`http://ipfs.io/ipfs/${selected.path}`} x="3%" y="-1.25%" height="6rem"/>
+        <image xlinkHref={`http://localhost:8888/ipfs/${selected.path}`} x="4%" y="-1.25%" height="6rem"/>
+      )
+    }
+  }
+
   const lbl = (datum, row, col) => {
     const x = (outerGutter.width + col * (label.width + innerGutter.width)) * dpi
     const y = (outerGutter.height + row * (label.height + innerGutter.height)) * dpi
@@ -95,7 +126,8 @@ export default () => {
     const qrSize = Math.min(label.width, label.height) * 0.8 * dpi
     return (
       <g key={datum.guid} transform={`translate(${x}, ${y}) rotate(-90) translate(${-initY}, 0)`}>
-        {idView(datum.guid)}
+        {/* {idView(datum.guid)} */}
+        {image()}
         <image
           width={qrSize} height={qrSize}
           x={qrSize * 0.22 / 2} y={label.width * dpi - qrSize - qrSize * 0.05}
@@ -107,6 +139,10 @@ export default () => {
 
   return (
     <Flex alignItems='center' flexDirection='column'>
+      <Button onClick={() => links('QmT8fxdiii2hagjjTNf5xRwneW5KNopCNQaegLwuyVYZgu')}> List Images
+      </Button>
+      <Button onClick={() => console.log('HI')}> SAYHI!!
+      </Button>
       <Card className='config'><Flex flexDirection='column'>
         <form>
           <fieldset>
