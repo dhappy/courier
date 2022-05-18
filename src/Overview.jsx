@@ -42,7 +42,7 @@ export default () => {
         let svg = obj.current.contentDocument.querySelector('svg')
         if(!svg) { alert("Couldn't find SVG.") }
         let nodes = svg.querySelectorAll("[*|label='Icons'] > *")
-        console.info(nodes)
+        console.info  (nodes)
         if(!nodes || nodes.length === 0) { alert("Couldn't find nodes.") }
         const ns = 'http://www.inkscape.org/namespaces/inkscape'
         for(let node of nodes) {
@@ -106,6 +106,12 @@ export default () => {
         {text}
       </div>
     )}
-    <object id='chain' data='chain.svg' ref={obj} style={{ display: 'block', maxWidth: '45em', margin: 'auto' }}/>
+    <object
+      id='chain'
+      data='chain.svg'
+      ref={obj}
+      style={{ display: 'block', maxWidth: '45em', margin: 'auto' }}
+      aria-label="Chain"
+    />
   </>
 }

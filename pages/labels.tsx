@@ -49,7 +49,7 @@ const Labels = () => {
       outerGutter: { width: 3 / 8, height: 5 / 8 },
       innerGutter: { width: 1 / 4, height: 3 / 8 },
     },
-  }
+  } as const
   const setters = {
     page: setPage, label: setLabel,
     innerGutter: setInnerGutter, outerGutter: setOuterGutter,
@@ -168,12 +168,17 @@ const Labels = () => {
           </Box>
           <FormControl>
             <FormLabel>Presets:</FormLabel>
-            <Select onChange={(evt) => {
-              const preset = presets[evt.target.value]
-              for (let prop of Object.keys(setters)) {
-                setters[prop](preset[prop])
+            <Select onChange={
+              ({ target: { value } }:{ target: { value: string } }) => {
+                const key = value as keyof typeof presets
+                const preset = presets[key]
+                for (let prop of Object.keys(setters)) {
+                  setters[prop as keyof typeof setters](
+                    preset[prop as keyof typeof preset]
+                  )
+                }
               }
-            }}>
+            }>
               {Object.keys(presets).map((opt, i) => (
                 <chakra.option key={i}>{opt}</chakra.option>
               ))}
@@ -183,7 +188,11 @@ const Labels = () => {
             <FormLabel>Add Images:</FormLabel>
             <Input
               value={cid}
-              onChange={({ target: { value } }) => setCID(value)}
+              onChange={
+                ({ target: { value } }: { target: { value: string } }) => (
+                  setCID(value)
+                )
+              }
               w="calc(100% - 6rem)"
             />
             <Button onClick={() => addImages(cid)}>
