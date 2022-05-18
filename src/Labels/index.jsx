@@ -1,46 +1,53 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  Button, Flex, Card, Field,
-} from 'rimble-ui'
+  chakra, Button, Flex, Input, Box, Stack,
+  FormControl, FormLabel, Text, Select,
+} from '@chakra-ui/react'
 import { v1 as uuidv1 } from 'uuid'
 import * as base58 from 'bs58'
 import QRCode from 'qrcode'
 import { chunk } from '../utils'
-import { create } from 'ipfs-http-client';
+import { create as mkIPFS } from 'ipfs-http-client';
 
 const links = async (path) => {
   // const url = 'https://dweb.link/api/v0'
   const url = 'http://localhost:5001/api/v0'
-  
-  const ipfs = create({ url })
+
+  const ipfs = mkIPFS({ url })
   const links = []
+  console.info('LDIN')
   for await (const link of ipfs.ls(path)) {
     links.push(link)
   }
+
+  console.info({ links })
   return links
 }
 
-export default () => {
-  const [page, setPage] = useState({width: 8.5, height: 11})
-  const [label, setLabel] = useState({width: 2 + 5/8, height: 2})
-  const [innerGutter, setInnerGutter] = useState({width: 1/8, height: 0})
-  const [outerGutter, setOuterGutter] = useState({width: 7/32, height: 15/32})
+const Labels = () => {
+  const [page, setPage] = useState({ width: 8.5, height: 11 })
+  const [label, setLabel] = useState({ width: 2 + 5 / 8, height: 2 })
+  const [innerGutter, setInnerGutter] = useState({ width: 1 / 8, height: 0 })
+  const [outerGutter, setOuterGutter] = useState({ width: 7 / 32, height: 15 / 32 })
   const [data, setData] = useState([])
   const [images, setImages] = useState([])
+  const [cid, setCID] = useState(
+    'QmT8fxdiii2hagjjTNf5xRwneW5KNopCNQaegLwuyVYZgu'
+  )
 
   const dpi = 96 // inkscape default
   const presets = {
-    'Avery 6793 (15×(2"×2⅝"))': {
+    'Avery 6793 (15×(2“×2⅝“))': {
       page: { width: 8.5, height: 11 },
-      label: { width: 2 + 5/8, height: 2 },
-      outerGutter: { width: 7/32, height: 15/32 },
-      innerGutter: { width: 1/8, height: 0 },
+      label: { width: 2 + 5 / 8, height: 2 },
+      outerGutter: { width: 7 / 32, height: 15 / 32 },
+      innerGutter: { width: 1 / 8, height: 0 },
     },
-    'Avery 6874 (6×(3"×3¾"))': {
+    'Avery 6874 (6×(3“×3¾“))': {
       page: { width: 8.5, height: 11 },
-      label: { width: 3 + 3/4, height: 3 },
-      outerGutter: { width: 3/8, height: 5/8 },
-      innerGutter: { width: 1/4, height: 3/8 },
+      label: { width: 3 + 3 / 4, height: 3 },
+      outerGutter: { width: 3 / 8, height: 5 / 8 },
+      innerGutter: { width: 1 / 4, height: 3 / 8 },
     },
   }
   const setters = {
@@ -48,12 +55,12 @@ export default () => {
     innerGutter: setInnerGutter, outerGutter: setOuterGutter,
   }
 
-  useEffect(() => {
-    const load = async () => {
-      setImages(await links('QmT8fxdiii2hagjjTNf5xRwneW5KNopCNQaegLwuyVYZgu'))      
-    }
-    load()       
+  const addImages = useCallback(async (cid) => {
+    const list = await links(cid)
+    console.debug('LOADING', list)
+    setImages((imgs) => [...imgs, ...list])
   }, [])
+
   const genData = useCallback(async () => {
     const rows = Math.round((page.height - outerGutter.height * 2 + innerGutter.height) / (label.height + innerGutter.height))
     const cols = Math.round((page.width - outerGutter.width * 2 + innerGutter.width) / (label.width + innerGutter.width))
@@ -65,11 +72,14 @@ export default () => {
       ids.map((guid) => (
         new Promise((resolve, reject) => {
           QRCode.toString(
-            `https://pkg.dhappy.org/#/cel/${guid}`,
+            `https://ship.via.autos/pkg/${guid}`,
             { margin: 0, errorCorrectionLevel: 'low' },
             (err, string) => {
-              if(err) throw err
-              resolve(string)
+              if (err) {
+                reject(err)
+              } else {
+                resolve(string)
+              }
             }
           )
         })
@@ -84,37 +94,26 @@ export default () => {
   const setter = (dim, axis) => (
     (evt) => {
       const val = evt.target.value
-      if(!setters[dim]) {
+      if (!setters[dim]) {
         console.error(`No Setter For: ${dim}`)
       } else {
-        setters[dim](old => ({...old, [axis]: val}))
+        setters[dim](old => ({ ...old, [axis]: val }))
       }
     }
   )
 
   const genId = () => {
-    const buffer = new Array()
-    const uuid = uuidv1({}, buffer)
+    const buffer = []
+    uuidv1({}, buffer)
     return base58.encode(buffer)
   }
 
-  const idView = (guid) => {
-    const rows = chunk(guid, 8)
-    return (
-      <text style={{textAnchor: 'middle', fontFamily: "'Source Code Pro', monospace", fontSize: 25}} >
-        {rows.map((r, i) => (
-          <tspan key={i} x={label.height / 2 * dpi} dy={25}>{chunk(r, Math.ceil(r.length / 2)).join('-')}</tspan>
-        ))}
-      </text>
-    )
-  }
-
   const image = () => {
-    if(images.length > 0) {
+    if (images.length > 0) {
       const selected = images[Math.floor(images.length * Math.random())]
       return (
         // <image xlinkHref={`http://ipfs.io/ipfs/${selected.path}`} x="3%" y="-1.25%" height="6rem"/>
-        <image xlinkHref={`http://localhost:8888/ipfs/${selected.path}`} x="4%" y="-1.25%" height="6rem"/>
+        <image xlinkHref={`http://localhost:8888/ipfs/${selected.path}`} x="4%" y="-1.25%" height="6rem" />
       )
     }
   }
@@ -138,49 +137,61 @@ export default () => {
   }
 
   return (
-    <Flex alignItems='center' flexDirection='column'>
-      <Button onClick={() => links('QmT8fxdiii2hagjjTNf5xRwneW5KNopCNQaegLwuyVYZgu')}> List Images
-      </Button>
-      <Button onClick={() => console.log('HI')}> SAYHI!!
-      </Button>
-      <Card className='config'><Flex flexDirection='column'>
-        <form>
-          <fieldset>
-            <label>Page Size:</label>
-            <input type='number' value={page.width} onChange={setter('page', 'width')}/>
-            <span>×</span>
-            <input value={page.height} onChange={setter('page', 'height')}/>
-          </fieldset>
-          <fieldset>
-            <label>Label:</label>
-            <input value={label.width} onChange={setter('label', 'width')}/>
-            <span>×</span>
-            <input value={label.height} onChange={setter('label', 'height')}/>
-          </fieldset>
-          <fieldset>
-            <label>Outer Gutters:</label>
-            <input value={outerGutter.width} onChange={setter('outerGutter', 'width')}/>
-            <span>×</span>
-            <input value={outerGutter.height} onChange={setter('outerGutter', 'height')}/>
-          </fieldset>
-          <fieldset>
-            <label>Inner Gutters:</label>
-            <input value={innerGutter.width} onChange={setter('innerGutter', 'width')}/>
-            <span>×</span>
-            <input value={innerGutter.height} onChange={setter('innerGutter', 'height')}/>
-          </fieldset>
-        </form>
-        <Field label='Presets:'>
-          <select onChange={(evt) => {
-            const preset = presets[evt.target.value]
-            for(let prop of Object.keys(setters)) {
-              setters[prop](preset[prop])
-            }
-          }}>
-            {Object.keys(presets).map((opt, i) => <option key={i}>{opt}</option>)}
-          </select>
-        </Field>
-      </Flex></Card>
+    <Stack align='center'>
+      <Box className='config'>
+        <Stack>
+          <Box as="form">
+            <FormControl>
+              <FormLabel>Page Size:</FormLabel>
+              <Input type="number" value={page.width} onChange={setter('page', 'width')} />
+              <Text as="span">×</Text>
+              <Input type="number" value={page.height} onChange={setter('page', 'height')} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Label Size:</FormLabel>
+              <Input type="number" value={label.width} onChange={setter('label', 'width')} />
+              <Text as="span">×</Text>
+              <Input type="number" value={label.height} onChange={setter('label', 'height')} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Outer Gutter Size:</FormLabel>
+              <Input type="number" value={outerGutter.width} onChange={setter('outerGutter', 'width')} />
+              <Text as="span">×</Text>
+              <Input type="number" value={outerGutter.height} onChange={setter('outerGutter', 'height')} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Inner Gutter Size:</FormLabel>
+              <Input type="number" value={innerGutter.width} onChange={setter('innerGutter', 'width')} />
+              <Text as="span">×</Text>
+              <Input type="number" value={innerGutter.height} onChange={setter('innerGutter', 'height')} />
+            </FormControl>
+          </Box>
+          <FormControl>
+            <FormLabel>Presets:</FormLabel>
+            <Select onChange={(evt) => {
+              const preset = presets[evt.target.value]
+              for (let prop of Object.keys(setters)) {
+                setters[prop](preset[prop])
+              }
+            }}>
+              {Object.keys(presets).map((opt, i) => (
+                <chakra.option key={i}>{opt}</chakra.option>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl>
+            <FormLabel>Add Images:</FormLabel>
+            <Input
+              value={cid}
+              onChange={({ target: { value } }) => setCID(value)}
+              w="calc(100% - 6rem)"
+            />
+            <Button onClick={() => addImages(cid)}>
+              <Text as="span" role="img">➕</Text>
+            </Button>
+          </FormControl>
+        </Stack>
+      </Box>
       <Flex>
         <svg
           viewBox={[0, 0, page.width * dpi, page.height * dpi].join(' ')}
@@ -192,6 +203,8 @@ export default () => {
           ))}
         </svg>
       </Flex>
-   </Flex>
+    </Stack>
   )
 }
+
+export default Labels
