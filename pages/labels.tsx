@@ -6,10 +6,10 @@ import {
 import { v1 as uuidv1 } from 'uuid'
 import * as base58 from 'bs58'
 import QRCode from 'qrcode'
-import { chunk } from '../utils'
+import { chunk } from '../../utils'
 import { create as mkIPFS } from 'ipfs-http-client';
 
-const links = async (path) => {
+const links = async (path: string) => {
   // const url = 'https://dweb.link/api/v0'
   const url = 'http://localhost:5001/api/v0'
 
