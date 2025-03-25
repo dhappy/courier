@@ -1,8 +1,16 @@
 import '../styles/globals.css'
+import { ChakraProvider } from '@chakra-ui/react'
 import type { AppProps } from 'next/app'
+import Head from 'next/head'
 
-function MyApp({ Component, pageProps }: AppProps) {
-  return <Component {...pageProps} />
-}
+export const Courier = ({ Component, pageProps }: AppProps) => (
+  <ChakraProvider>
+    <Head>
+      <link rel="shortcut icon" href="/envelope-192.png" />
+    </Head>
 
-export default MyApp
+    <Component {...pageProps}/>
+  </ChakraProvider>
+)
+
+export default Courier
